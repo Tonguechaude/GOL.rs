@@ -1,0 +1,29 @@
+[package]
+name = "Jeu_de_la_Vie"
+version = "0.1.0"
+edition = "2021"
+authors = ["Tonguechaude"]
+description = "Implémentation du Jeu de la vie en Rust et WASM avec Bevy"
+license = "GNU - AGPL v3.0"
+
+[dependencies]
+rand = "0.9.0"
+bevy_egui = "0.32.0"
+egui-modal = "0.6.0"
+
+[dependencies.bevy]
+version = "0.15.2"
+default-features = false
+features = [
+  # Fonctionnalitées de Bevy :
+  #"multi-threaded",     # Lancer avec le multi-threading
+  "bevy_winit",         # Window management
+  "bevy_render",        # Rendering framework core
+  "bevy_core_pipeline", # Common rendering abstractions
+  "bevy_sprite",        # 2D (sprites) rendering
+  # Platform-specific:
+  "x11",                   # Linux: Support X11 windowing system
+  "webgl2",                # Web: use WebGL2 instead of WebGPU
+  #"trace",
+]
+
