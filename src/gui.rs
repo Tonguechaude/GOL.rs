@@ -211,7 +211,7 @@ fn system_clique_souris(
         return;
     };
     let (camera, camera_transform) = q_camera.single();
-    
+
     let position_cible = match camera.viewport_to_world(camera_transform, cursor_position) {
         Ok(ray) => ray.origin.truncate().round(),
         Err(_) => {
@@ -219,7 +219,7 @@ fn system_clique_souris(
             return;
         }
     };
-    
+
     debug!("Position du clique : {position_cible}");
     let nouvelle_cellule = CellulePosition {
         x: position_cible.x as isize,
@@ -374,10 +374,10 @@ fn nettoyage_cellules(commands: &mut Commands, q_cellules: &Query<Entity, With<C
 }
 
 fn generation_alleatoire_cellule(commands: &mut Commands, x: isize, y: isize, largeur: usize, hauteur: usize) {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     for coord_x in x..(x + largeur as isize) {
         for coord_y in y..(y + hauteur as isize) {
-            if rng.gen::<bool>() {
+            if rng.random::<bool>() {
                 commands.spawn(CellulePosition {
                     x: coord_x,
                     y: coord_y,
@@ -403,4 +403,3 @@ fn slider_to_echelle(slider: f32) -> f32 {
     ((slider - 1.0) * (ECHELLE_MAX - ECHELLE_DEFAUT) / 99.0 + ECHELLE_DEFAUT)
         .clamp(ECHELLE_DEFAUT, ECHELLE_MAX)
 }
-
