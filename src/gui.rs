@@ -56,9 +56,14 @@ impl Default for GuiParams {
 }
 
 fn init_camera(mut commands: Commands) {
-    let mut camera = Camera2dBundle::default();
-    camera.projection.scale = ECHELLE_DEFAUT;
-    commands.spawn(camera);
+    let camera = Camera2d::default();
+    commands.spawn((
+        camera,
+        Projection::from(OrthographicProjection {
+            scale: ECHELLE_DEFAUT,
+            ..OrthographicProjection::default_2d()
+        })
+    ));
 }
 
 fn system_gui(
@@ -83,7 +88,7 @@ fn system_gui(
         modal.show(|ui| {
             modal.title(ui, "Tuer toutes les cellules !!");
             modal.frame(ui, |ui| {
-                modal.body(ui, "On tut tout le monde ?");
+                modal.body(ui, "On tue tout le monde ?");
             });
             modal.buttons(ui, |ui| {
                 modal.button(ui, "Non");
