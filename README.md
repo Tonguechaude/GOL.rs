@@ -42,7 +42,7 @@ Commande pour build le WASM et générer le JS :
 
 > :no_entry: NE LIS PAS SI TU N'ES PAS MOI !!
 
-déploiement : `scp -r webapp/* tongue@tonguechaude.fr:/var/www/tonguechaude.github.io/gol`
+déploiement en attendant que me motive à créer les secrets pour github CI/CD : `rsync -av --rsh=ssh webapp/* tongue@tonguechaude.fr:/var/www/tonguechaude.github.io/gol`
 
 ## License
 

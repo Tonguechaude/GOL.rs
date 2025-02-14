@@ -59,4 +59,22 @@ jobs:
       with:
         path: ${{ env.WEBAPP_DIR }}
 
-#  wasm-deploy:
+  wasm-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy files via Rsync
+        uses: D3rHase/rsync-deploy-action@latest
+        with:
+          HOST: ${{ secret.HOST }}
+          PORT: ${{ secret.PORT }}
+          USER: ${{ secret.USER }}
+          PRIVATE_SSH_KEY: ${{ secret.PRIVATE_SSH_KEY }}
+          REPOSITORY_PATH: 'webapp/*'
+          SERVER_PATH: '/var/www/tonguechaude.github.io/gol/'
+
+      - name: Notify Deployment Success
+        run: echo "Deployment to ${{ secrets.HOST }} completed successfully!"
