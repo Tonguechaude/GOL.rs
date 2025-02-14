@@ -1,0 +1,78 @@
+name: Build
+
+on: release 
+
+env:
+  CARGO_TERM_COLOR: always
+  WASM_FILE_RELEASE: ./target/wasm32-unknown-unknown/release/jeu-de-la-vie.wasm
+  WASM_POST_BINDGEN_FILE: ./webapp/jeu-de-la-vie-bg.wasm
+  WEBAPP_DIR: ./webapp
+
+jobs:
+
+  native-build:
+
+    name: Native build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout project
+      uses: actions/checkout@v3
+    - name: Instal latest stable Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+    - name: Build
+      run: cargo build
+    - name: Run tests
+      run: cargo test --verbose
+
+  wasm-build:
+
+    name: WASM build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install wasm-opt
+      run: sudo apt-get install -y binaryen
+    - name: Checkout project
+      uses: actions/checkout@v3
+    - name: Instal latest stable Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+    - name: Install WASM LLVM triple
+      run: rustup target add wasm32-unknown-unknown
+    - name: Install wasm-bindgen-cli
+      run: cargo install wasm-bindgen-cli
+    - name: Build
+      run: cargo build --release --target wasm32-unknown-unknown
+#    - name: Run tests
+#      run: cargo test --verbose --target wasm32-unknown-unknown
+    - name: Generate JS file
+      run: wasm-bindgen --no-typescript --out-dir $WEBAPP_DIR --target web $WASM_FILE_RELEASE
+    - name: Optimize WASM file size
+      run: wasm-opt -Oz -o $WASM_POST_BINDGEN_FILE $WASM_POST_BINDGEN_FILE
+    - name: Upload Pages artifact
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: ${{ env.WEBAPP_DIR }}
+
+  wasm-deploy:
+
+    if: github.ref == 'refs/heads/main'
+    needs: wasm-build
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
