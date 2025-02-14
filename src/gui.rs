@@ -13,6 +13,7 @@ type Seconds = f32;
 
 const COULEUR_BG: Color = Color::srgb(0.9, 0.9, 0.9);
 const COULEUR_CELLULE: Color = Color::srgb(0.0, 0.0, 0.2);
+
 const ECHELLE_DEFAUT: f32 = 1.0 / 40.0;
 const ECHELLE_MAX: f32 = 1.0;
 
@@ -56,14 +57,9 @@ impl Default for GuiParams {
 }
 
 fn init_camera(mut commands: Commands) {
-    let camera = Camera2d::default();
-    commands.spawn((
-        camera,
-        Projection::from(OrthographicProjection {
-            scale: ECHELLE_DEFAUT,
-            ..OrthographicProjection::default_2d()
-        })
-    ));
+    let mut camera = Camera2dBundle::default();
+    camera.projection.scale = ECHELLE_DEFAUT;
+    commands.spawn(camera);
 }
 
 fn system_gui(
@@ -130,7 +126,7 @@ fn system_gui(
                 }
             });
             ui.horizontal(|ui| {
-                ui.add(egui::DragValue::new(&mut gui_params.largeur_grille_gen_aleatoire).suffix("largeur"));
+                ui.add(egui::DragValue::new(&mut gui_params.largeur_grille_gen_aleatoire).suffix(" largeur"));
                 if ui.button("Cellule aléatoire").clicked() {
                     random_modal.open();
                 }
@@ -184,22 +180,22 @@ fn system_gui(
     }
 }
 
+
 fn system_dessiner_nouvelle_cellules(
     mut commands: Commands,
     query: Query<(Entity, &CellulePosition), Added<CellulePosition>>,
 ) {
     for (entity, pos) in query.iter() {
-        commands.entity(entity).insert(SpriteBundle {
-            sprite: Sprite {
-                color: COULEUR_CELLULE,
-                custom_size: Some(Vec2::new(1.0, 1.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(pos.x as f32, pos.y as f32, 0.0),
+        commands.entity(entity).insert(Sprite {
+            color: COULEUR_CELLULE,
+            custom_size: Some(Vec2::new(1.0, 1.0)),
             ..Default::default()
         });
+
+        commands.entity(entity).insert(Transform::from_xyz(pos.x as f32, pos.y as f32, 0.0));
     }
 }
+
 
 fn system_clique_souris(
     mut commands: Commands,
@@ -379,10 +375,10 @@ fn nettoyage_cellules(commands: &mut Commands, q_cellules: &Query<Entity, With<C
 }
 
 fn generation_alleatoire_cellule(commands: &mut Commands, x: isize, y: isize, largeur: usize, hauteur: usize) {
-    let mut rng = rand::rng();
+    let mut rng = rand::thread_rng();
     for coord_x in x..(x + largeur as isize) {
         for coord_y in y..(y + hauteur as isize) {
-            if rng.random::<bool>() {
+            if rng.gen::<bool>() {
                 commands.spawn(CellulePosition {
                     x: coord_x,
                     y: coord_y,
