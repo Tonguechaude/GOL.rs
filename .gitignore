@@ -1,8 +1,10 @@
-/target
-
 # VScode
 .vscode
 
 # vim
 *.un~
 
+# build
+webapp/*.js
+webapp/*.wasm
+target/
