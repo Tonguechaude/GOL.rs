@@ -45,8 +45,8 @@ impl Plugin for GuiSystem {
 pub struct GuiParams {
     pub largeur_grille_gen_aleatoire: u16,
     pub grille_active: bool,
-    pub couleur_bg: Color32,
-    pub couleur_cellule: Color32,
+    // pub couleur_bg: Color32,
+    // pub couleur_cellule: Color32,
 }
 
 impl Default for GuiParams {
@@ -54,8 +54,8 @@ impl Default for GuiParams {
         Self {
             largeur_grille_gen_aleatoire: 50_u16,
             grille_active: true,
-            couleur_bg: Color32::from_rgb(0, 230, 230),
-            couleur_cellule: Color32::from_rgb(0, 0, 51),
+            // couleur_bg: Color32::from_rgb(0, 230, 230),
+            // couleur_cellule: Color32::from_rgb(0, 0, 51),
         }
     }
 }

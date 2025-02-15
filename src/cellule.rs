@@ -1,22 +1,15 @@
-use std::{collections::BTreeSet, time::Duration};
-
-use bevy::{prelude::*, utils::HashMap};
+use std::{collections::{HashSet, HashMap}, time::Duration};
+use bevy::prelude::*;
 
 static VOISINS: [(isize, isize); 8] = [
-    (-1, -1),
-    (0, -1),
-    (1, -1),
-    (-1, 0),
-    (1, 0),
-    (-1, 1),
-    (0, 1),
-    (1, 1),
+    (-1, -1), (0, -1), (1, -1), (-1, 0),
+    (1, 0), (-1, 1), (0, 1), (1, 1),
 ];
 
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
 pub struct CelluleSet;
 
-#[derive(Clone, Component, PartialEq, Eq, Debug, Hash, PartialOrd, Ord)]
+#[derive(Clone, Component, PartialEq, Eq, Debug, Hash)]
 pub struct CellulePosition {
     pub x: isize,
     pub y: isize,
@@ -57,21 +50,18 @@ impl Plugin for CelluleSystem {
 }
 
 fn setup_cellule(mut commands: Commands) {
-    commands.spawn(CellulePosition { x: 0, y: 0 });
-    commands.spawn(CellulePosition { x: -1, y: 0 });
-    commands.spawn(CellulePosition { x: 0, y: -1 });
-    commands.spawn(CellulePosition { x: 0, y: 1 });
-    commands.spawn(CellulePosition { x: 1, y: 1 });
+    for &(x, y) in &[ (0, 0), (-1, 0), (0, -1), (0, 1), (1, 1) ] {
+        commands.spawn(CellulePosition { x, y });
+    }
 }
 
 fn cellule_params_listener(my_res: Res<CelluleParams>, mut timer: ResMut<TimerNouvelleGen>) {
-    if !my_res.is_changed() {
-        return;
-    }
-    debug!("CelluleParams est passée en mode : {:?}", *my_res);
-    if my_res.periode != timer.0.duration() {
-        timer.0.set_duration(my_res.periode);
-        timer.0.reset();
+    if my_res.is_changed() {
+        debug!("CelluleParams mis à jour : {:?}", *my_res);
+        if my_res.periode != timer.0.duration() {
+            timer.0.set_duration(my_res.periode);
+            timer.0.reset();
+        }
     }
 }
 
@@ -87,44 +77,43 @@ fn system_cellules(
         if !timer.0.finished() {
             return;
         }
-    } else if cellule_params.calcule_prochaine_gen {
-        cellule_params.calcule_prochaine_gen = false;
-    } else {
+    } else if !cellule_params.calcule_prochaine_gen {
         return;
+    } else {
+        cellule_params.calcule_prochaine_gen = false;
     }
-    let mut voisins = HashMap::new();
-    let mut spawn_candidates = BTreeSet::new();
+    
+    let mut voisins: HashMap<CellulePosition, usize> = HashMap::new();
+    let mut spawn_candidates: HashSet<CellulePosition> = HashSet::new();
+    let mut cellules_a_supprimer = Vec::new();
+
     for (_, cell) in &query {
-        for pos_delta in VOISINS.iter() {
-            let tmp_position = CellulePosition {
-                x: cell.x + pos_delta.0,
-                y: cell.y + pos_delta.1,
-            };
-            let nb_voisins = match voisins.get(&tmp_position) {
-                Some(prev_val) => prev_val + 1,
-                None => 1,
-            };
-            voisins.insert(tmp_position.clone(), nb_voisins);
-            if nb_voisins == 3 {
-                spawn_candidates.insert(tmp_position.clone());
-            } else if nb_voisins == 4 {
-                spawn_candidates.remove(&tmp_position);
+        for &(dx, dy) in &VOISINS {
+            let voisin_pos = CellulePosition { x: cell.x + dx, y: cell.y + dy };
+            let nb_voisins = voisins.entry(voisin_pos.clone()).or_insert(0);
+            *nb_voisins += 1;
+            if *nb_voisins == 3 {
+                spawn_candidates.insert(voisin_pos);
+            } else if *nb_voisins == 4 {
+                spawn_candidates.remove(&voisin_pos);
             }
         }
     }
+   
     for (entity, cellule) in &query {
-        let nb_voisins = *voisins.get(cellule).unwrap_or(&0);
-        match nb_voisins {
-            0..=1 => commands.entity(entity).despawn(),
+        match voisins.get(cellule).copied().unwrap_or(0) {
+            0 | 1 => cellules_a_supprimer.push(entity),
             2 => (),
-            3 => {
-                spawn_candidates.remove(cellule);
-            }
-            _ => commands.entity(entity).despawn(),
+            3 => { spawn_candidates.remove(cellule); },
+            _ => cellules_a_supprimer.push(entity),
         }
     }
+    
+    for entity in cellules_a_supprimer {
+        commands.entity(entity).despawn();
+    }
+    
     for nouvelle_cellule in spawn_candidates {
         commands.spawn(nouvelle_cellule);
     }
 }
-
