@@ -8,11 +8,12 @@ use bevy_egui::{
 };
 use egui_modal::Modal;
 use rand::Rng;
+// use egui::color_picker::color_edit_button_srgba;
 
 type Seconds = f32;
 
 const COULEUR_BG: Color = Color::srgb(0.9, 0.9, 0.9);
-const COULEUR_CELLULE: Color = Color::srgb(0.0, 0.0, 0.2);
+const COULEUR_CELLULE: Color = Color::srgb(0.0, 0.0, 0.0);
 
 const ECHELLE_DEFAUT: f32 = 1.0 / 40.0;
 const ECHELLE_MAX: f32 = 1.0;
@@ -76,8 +77,10 @@ fn system_gui(
 ) {
     let ctx = contexts.ctx_mut();
     ctx.set_visuals(egui::style::Visuals::light());
-
-    let (mut camera_proj, camera_transform) = q_camera.get_single_mut().unwrap();
+    let (mut camera_proj, camera_transform) = match q_camera.get_single_mut() {
+        Ok(data) => data,
+        Err(_) => return,
+    };
     let speed_slider_init = periode_to_slider(cellule_params.periode.as_secs_f32());
     let mut vitesse_slider = speed_slider_init;
     let scale_slider_init = echelle_to_slider(camera_proj.scale);
@@ -174,6 +177,17 @@ fn system_gui(
                 ui.label("Tu peux appuyer sur la grille quand la génération est en pause !");
                 ui.label("Utilise les fléches directionnelles pour te déplacer !");
             });
+            // !TODO WIP (WARN COMMAND UNAPPLIED)
+            // separateur(ui);
+            // ui.label("Personnalisation des couleurs :");
+            // ui.horizontal(|ui| {
+            //     ui.label("Fond :");
+            //     color_edit_button_srgba(ui, &mut gui_params.couleur_bg, egui::color_picker::Alpha::BlendOrAdditive);
+            // });
+            // ui.horizontal(|ui| {
+            //     ui.label("Cellules :");
+            //     color_edit_button_srgba(ui, &mut gui_params.couleur_cellule, egui::color_picker::Alpha::BlendOrAdditive);
+            // });
         });
 
     if scale_slider_init != scale_slider_val {
@@ -182,6 +196,26 @@ fn system_gui(
     if speed_slider_init != vitesse_slider {
         cellule_params.periode = Duration::from_secs_f32(slider_to_periode(vitesse_slider));
     }
+    
+    // !TODO WIP (WARN COMMAND UNAPPLIED)
+    // commands.insert_resource(ClearColor(Color::srgba_u8(
+    //     gui_params.couleur_bg.r(),
+    //     gui_params.couleur_bg.g(),
+    //     gui_params.couleur_bg.b(),
+    //     gui_params.couleur_bg.a(),
+    // )));
+    
+    // for entity in q_cells.iter() {
+    //     commands.entity(entity).insert(Sprite {
+    //         color: Color::srgba_u8(
+    //             gui_params.couleur_cellule.r(),
+    //             gui_params.couleur_cellule.g(),
+    //             gui_params.couleur_cellule.b(),
+    //             gui_params.couleur_cellule.a(),
+    //         ),
+    //         ..Default::default()
+    //     });
+    // }
 }
 
 
@@ -265,7 +299,10 @@ fn system_dessin_grille(
     q_camera: Query<(&Camera, &OrthographicProjection, &GlobalTransform)>,
 ) {
     const COULEUR_LIGNE: Color32 = Color32::BLACK;
-    let (camera, camera_proj, camera_transform) = q_camera.get_single().unwrap();
+    let (camera, camera_proj, camera_transform) = match q_camera.get_single() {
+        Ok(data) => data,
+        Err(_) => return,
+    };
     let ctx = contexts.ctx_mut();
     let image_transparente = egui::containers::Frame {
         fill: Color32::TRANSPARENT,
@@ -373,7 +410,8 @@ fn system_dessin_grille(
 }
 
 fn nettoyage_cellules(commands: &mut Commands, q_cellules: &Query<Entity, With<CellulePosition>>) {
-    for entity in q_cellules.iter() {
+    let cellules_a_supprimer: Vec<Entity> = q_cellules.iter().collect();
+    for entity in cellules_a_supprimer {
         commands.entity(entity).despawn();
     }
 }
