@@ -62,9 +62,15 @@ impl Default for GuiParams {
 }
 
 fn init_camera(mut commands: Commands) {
-    let mut camera = Camera2dBundle::default();
-    camera.projection.scale = ECHELLE_DEFAUT;
-    commands.spawn(camera);
+    commands.spawn((
+        Camera2d,
+        OrthographicProjection {
+            scale: ECHELLE_DEFAUT,
+            far: 1000.0,
+            near: -1000.0,
+            ..OrthographicProjection::default_2d()
+        },
+    ));
 }
 
 fn system_gui(
