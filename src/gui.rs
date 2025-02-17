@@ -139,7 +139,10 @@ fn system_gui(
                 }
             });
             ui.horizontal(|ui| {
-                ui.add(egui::DragValue::new(&mut gui_params.largeur_grille_gen_aleatoire).suffix(" largeur"));
+                ui.add(
+                    egui::DragValue::new(&mut gui_params.largeur_grille_gen_aleatoire)
+                        .suffix(" largeur"),
+                );
                 if ui.button("Cellule aléatoire").clicked() {
                     random_modal.open();
                 }
@@ -160,12 +163,18 @@ fn system_gui(
             });
             separateur(ui);
             ui.horizontal(|ui| {
-                let play_text = if cellule_params.en_cours { "Pause" } else { "Lancer" };
+                let play_text = if cellule_params.en_cours {
+                    "Pause"
+                } else {
+                    "Lancer"
+                };
                 if ui.button(play_text).clicked() {
                     cellule_params.en_cours = !cellule_params.en_cours;
                 }
-                let next_step_btn =
-                    ui.add_enabled(!cellule_params.en_cours, egui::Button::new("Prochaine génération"));
+                let next_step_btn = ui.add_enabled(
+                    !cellule_params.en_cours,
+                    egui::Button::new("Prochaine génération"),
+                );
                 if !cellule_params.en_cours && next_step_btn.clicked() {
                     cellule_params.calcule_prochaine_gen = true;
                 };
@@ -202,7 +211,7 @@ fn system_gui(
     if speed_slider_init != vitesse_slider {
         cellule_params.periode = Duration::from_secs_f32(slider_to_periode(vitesse_slider));
     }
-    
+
     // !TODO WIP (WARN COMMAND UNAPPLIED)
     // commands.insert_resource(ClearColor(Color::srgba_u8(
     //     gui_params.couleur_bg.r(),
@@ -210,7 +219,7 @@ fn system_gui(
     //     gui_params.couleur_bg.b(),
     //     gui_params.couleur_bg.a(),
     // )));
-    
+
     // for entity in q_cells.iter() {
     //     commands.entity(entity).insert(Sprite {
     //         color: Color::srgba_u8(
@@ -224,7 +233,6 @@ fn system_gui(
     // }
 }
 
-
 fn system_dessiner_nouvelle_cellules(
     mut commands: Commands,
     query: Query<(Entity, &CellulePosition), Added<CellulePosition>>,
@@ -236,10 +244,11 @@ fn system_dessiner_nouvelle_cellules(
             ..Default::default()
         });
 
-        commands.entity(entity).insert(Transform::from_xyz(pos.x as f32, pos.y as f32, 0.0));
+        commands
+            .entity(entity)
+            .insert(Transform::from_xyz(pos.x as f32, pos.y as f32, 0.0));
     }
 }
-
 
 fn system_clique_souris(
     mut commands: Commands,
@@ -378,7 +387,8 @@ fn system_dessin_grille(
                     stroke: egui::Stroke {
                         width: largeur_ligne,
                         color: COULEUR_LIGNE,
-                    }.into(),
+                    }
+                    .into(),
                 });
             }
             for y in y_min..=y_max {
@@ -409,7 +419,8 @@ fn system_dessin_grille(
                     stroke: egui::Stroke {
                         width: largeur_ligne,
                         color: COULEUR_LIGNE,
-                    }.into(),
+                    }
+                    .into(),
                 });
             }
         });
@@ -422,7 +433,13 @@ fn nettoyage_cellules(commands: &mut Commands, q_cellules: &Query<Entity, With<C
     }
 }
 
-fn generation_alleatoire_cellule(commands: &mut Commands, x: isize, y: isize, largeur: usize, hauteur: usize) {
+fn generation_alleatoire_cellule(
+    commands: &mut Commands,
+    x: isize,
+    y: isize,
+    largeur: usize,
+    hauteur: usize,
+) {
     let mut rng = rand::thread_rng();
     for coord_x in x..(x + largeur as isize) {
         for coord_y in y..(y + hauteur as isize) {
@@ -441,7 +458,8 @@ fn periode_to_slider(period: f32) -> f32 {
 }
 
 fn slider_to_periode(slider: f32) -> f32 {
-    ((100.0 - slider) * (PERIODE_MAX - PERIODE_MIN) / 99.0 + PERIODE_MIN).clamp(PERIODE_MIN, PERIODE_MAX)
+    ((100.0 - slider) * (PERIODE_MAX - PERIODE_MIN) / 99.0 + PERIODE_MIN)
+        .clamp(PERIODE_MIN, PERIODE_MAX)
 }
 
 fn echelle_to_slider(scale: f32) -> f32 {

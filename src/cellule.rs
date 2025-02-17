@@ -1,9 +1,18 @@
-use std::{collections::{HashSet, HashMap}, time::Duration};
 use bevy::prelude::*;
+use std::{
+    collections::{HashMap, HashSet},
+    time::Duration,
+};
 
 static VOISINS: [(isize, isize); 8] = [
-    (-1, -1), (0, -1), (1, -1), (-1, 0),
-    (1, 0), (-1, 1), (0, 1), (1, 1),
+    (-1, -1),
+    (0, -1),
+    (1, -1),
+    (-1, 0),
+    (1, 0),
+    (-1, 1),
+    (0, 1),
+    (1, 1),
 ];
 
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
@@ -50,7 +59,7 @@ impl Plugin for CelluleSystem {
 }
 
 fn setup_cellule(mut commands: Commands) {
-    for &(x, y) in &[ (0, 0), (-1, 0), (0, -1), (0, 1), (1, 1) ] {
+    for &(x, y) in &[(0, 0), (-1, 0), (0, -1), (0, 1), (1, 1)] {
         commands.spawn(CellulePosition { x, y });
     }
 }
@@ -82,14 +91,17 @@ fn system_cellules(
     } else {
         cellule_params.calcule_prochaine_gen = false;
     }
-    
+
     let mut voisins: HashMap<CellulePosition, usize> = HashMap::new();
     let mut spawn_candidates: HashSet<CellulePosition> = HashSet::new();
     let mut cellules_a_supprimer = Vec::new();
 
     for (_, cell) in &query {
         for &(dx, dy) in &VOISINS {
-            let voisin_pos = CellulePosition { x: cell.x + dx, y: cell.y + dy };
+            let voisin_pos = CellulePosition {
+                x: cell.x + dx,
+                y: cell.y + dy,
+            };
             let nb_voisins = voisins.entry(voisin_pos.clone()).or_insert(0);
             *nb_voisins += 1;
             if *nb_voisins == 3 {
@@ -99,20 +111,22 @@ fn system_cellules(
             }
         }
     }
-   
+
     for (entity, cellule) in &query {
         match voisins.get(cellule).copied().unwrap_or(0) {
             0 | 1 => cellules_a_supprimer.push(entity),
             2 => (),
-            3 => { spawn_candidates.remove(cellule); },
+            3 => {
+                spawn_candidates.remove(cellule);
+            }
             _ => cellules_a_supprimer.push(entity),
         }
     }
-    
+
     for entity in cellules_a_supprimer {
         commands.entity(entity).despawn();
     }
-    
+
     for nouvelle_cellule in spawn_candidates {
         commands.spawn(nouvelle_cellule);
     }

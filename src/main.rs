@@ -19,4 +19,3 @@ fn main() {
         .add_plugins(GuiSystem)
         .run();
 }
-
