@@ -17,16 +17,16 @@ version = "0.8.5"
 version = "0.15.2"
 default-features = false
 features = [
-  # Fonctionnalitées de Bevy :
-  #"multi-threaded",     # Lancer avec le multi-threading
-  "bevy_winit",         # Window management
-  "bevy_render",        # Rendering framework core
-  "bevy_core_pipeline", # Common rendering abstractions
-  "bevy_sprite",        # 2D (sprites) rendering
-  # Platform-specific:
-  "x11",                   # Linux: Support X11 windowing system
-  "webgl2",                # Web: use WebGL2 instead of WebGPU
-  #"trace",
+    # Fonctionnalitées de Bevy :
+    "multi_threaded",     # Lancer avec le multi-threading
+    "bevy_winit",         # Window management
+    "bevy_render",        # Rendering framework core
+    "bevy_core_pipeline", # Common rendering abstractions
+    "bevy_sprite",        # 2D (sprites) rendering
+    # Platform-specific:
+    "x11",    # Linux: Support X11 windowing system
+    "webgl2", # Web: use WebGL2 instead of WebGPU
+    #"trace",
 ]
 
 [profile.release]
