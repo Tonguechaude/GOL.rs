@@ -58,7 +58,7 @@ impl Plugin for CelluleSystem {
     }
 }
 
-fn setup_cellule(mut commands: Commands) {
+pub fn setup_cellule(mut commands: Commands) {
     for &(x, y) in &[(0, 0), (-1, 0), (0, -1), (0, 1), (1, 1)] {
         commands.spawn(CellulePosition { x, y });
     }
