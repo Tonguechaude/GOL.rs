@@ -79,7 +79,7 @@ Pour compiler le projet en WebAssembly et générer les fichiers JavaScript :
 
 ```bash
 cargo build --release --target wasm32-unknown-unknown
-wasm-bindgen --no-typescript --out-dir ./webapp/ --target web ./target/wasm32-unknown-unknown/release/Jeu_de_la_Vie.wasm
+wasm-bindgen --no-typescript --out-dir ./webapp/ --target web ./target/wasm32-unknown-unknown/release/jeu_de_la_vie.wasm
 ```
 
 ## Dépendances

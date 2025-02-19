@@ -1,5 +1,5 @@
 [package]
-name = "Jeu_de_la_Vie"
+name = "jeu_de_la_vie"
 version = "0.1.0"
 edition = "2021"
 authors = ["Tonguechaude"]
