@@ -1,5 +1,5 @@
 # Variables
-PROJECT_NAME = Jeu_de_la_Vie
+PROJECT_NAME = jeu_de_la_vie
 RELEASE_DIR = target/release
 WASM_TARGET = wasm32-unknown-unknown
 
