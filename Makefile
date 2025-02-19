@@ -34,6 +34,11 @@ deploy:
 	rsync -av --rsh=ssh webapp/* tongue@tonguechaude.fr:/var/www/tonguechaude.github.io/gol
 .PHONY: deploy
 
+# Tests
+test:
+	cargo test -- --nocapture
+.PHONY: test
+
 # Install dependencies (e.g., wasm-pack)
 install-deps:
 	#curl https://sh.rustup.rs -sSf | sh

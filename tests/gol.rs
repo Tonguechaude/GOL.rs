@@ -26,3 +26,39 @@ fn test_setup_cellule() {
         assert!(cellules.contains(&pos), "Cellule absente : {:?}", pos);
     }
 }
+
+#[test]
+fn test_update_cellule2() {
+    let mut app = App::new();
+    app.add_plugins(MinimalPlugins).add_plugins(CelluleSystem);
+
+    app.update();
+
+    {
+        let mut cellule_params = app.world_mut().resource_mut::<CelluleParams>();
+        cellule_params.en_cours = false; // Stoppe le timer
+        cellule_params.calcule_prochaine_gen = true; // Force l'exécution
+    }
+
+    app.update();
+
+    let world = app.world_mut();
+    let mut query = world.query::<&CellulePosition>();
+    let cellules: Vec<_> = query.iter(world).collect();
+
+    println!("Cellules après 1 itération : {:?}", cellules);
+
+    let expected_positions = vec![
+        CellulePosition { x: 0, y: -1 },
+        CellulePosition { x: -1, y: -1 },
+        CellulePosition { x: -1, y: -1 },
+        CellulePosition { x: -1, y: 1 },
+        CellulePosition { x: 0, y: 1 },
+        CellulePosition { x: 1, y: 1 },
+    ];
+
+    assert_eq!(cellules.len(), expected_positions.len());
+    for pos in &expected_positions {
+        assert!(cellules.contains(&pos), "Cellule absente : {:?}", pos);
+    }
+}

@@ -64,7 +64,7 @@ pub fn setup_cellule(mut commands: Commands) {
     }
 }
 
-fn cellule_params_listener(my_res: Res<CelluleParams>, mut timer: ResMut<TimerNouvelleGen>) {
+pub fn cellule_params_listener(my_res: Res<CelluleParams>, mut timer: ResMut<TimerNouvelleGen>) {
     if my_res.is_changed() {
         debug!("CelluleParams mis à jour : {:?}", *my_res);
         if my_res.periode != timer.0.duration() {
@@ -74,7 +74,7 @@ fn cellule_params_listener(my_res: Res<CelluleParams>, mut timer: ResMut<TimerNo
     }
 }
 
-fn system_cellules(
+pub fn system_cellules(
     mut commands: Commands,
     query: Query<(Entity, &CellulePosition)>,
     mut timer: ResMut<TimerNouvelleGen>,
