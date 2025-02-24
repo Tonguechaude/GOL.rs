@@ -31,7 +31,7 @@ clean:
 # Deploy the web project on your server
 deploy:
 	$(MAKE) build-wasm
-	rsync -av --rsh=ssh webapp/* tongue@tonguechaude.fr:/var/www/tonguechaude.github.io/gol
+	rsync -av --rsh=ssh webapp/* tongue@tonguechaude.fr:/var/www/tonguechaude/gol
 .PHONY: deploy
 
 # Tests
