@@ -14,7 +14,7 @@ egui-modal = "0.6.0"
 version = "0.8.5"
 
 [dependencies.bevy]
-version = "0.15.2"
+version = "0.15.3"
 default-features = false
 features = [
     # Fonctionnalitées de Bevy :
@@ -30,5 +30,8 @@ features = [
 ]
 
 [profile.release]
-opt-level = 's'
-lto = "thin"
+opt-level = 3  # Maximum optimization
+lto = true     # Link Time Optimization
+codegen-units = 1  # Optimize for binary size
+strip = true   # Remove debug symbols
+panic = 'abort'  # Reduce unwinding overhead
