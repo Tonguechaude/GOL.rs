@@ -3,8 +3,8 @@ use std::time::Duration;
 use crate::cellule::{CelluleParams, CellulePosition, CelluleSet};
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::{
-    egui::{self, Color32, Ui},
     EguiContexts, EguiPlugin,
+    egui::{self, Color32, Ui},
 };
 use egui_modal::Modal;
 use rand::Rng;
@@ -443,7 +443,7 @@ fn generation_alleatoire_cellule(
     let mut rng = rand::thread_rng();
     for coord_x in x..(x + largeur as isize) {
         for coord_y in y..(y + hauteur as isize) {
-            if rng.gen::<bool>() {
+            if rng.r#gen::<bool>() {
                 commands.spawn(CellulePosition {
                     x: coord_x,
                     y: coord_y,
