@@ -440,10 +440,10 @@ fn generation_alleatoire_cellule(
     largeur: usize,
     hauteur: usize,
 ) {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     for coord_x in x..(x + largeur as isize) {
         for coord_y in y..(y + hauteur as isize) {
-            if rng.r#gen::<bool>() {
+            if rng.random::<bool>() {
                 commands.spawn(CellulePosition {
                     x: coord_x,
                     y: coord_y,
