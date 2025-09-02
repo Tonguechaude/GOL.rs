@@ -8,7 +8,6 @@ use bevy_egui::{
 };
 use egui_modal::Modal;
 use rand::Rng;
-// use egui::color_picker::color_edit_button_srgba;
 
 type Seconds = f32;
 
@@ -46,8 +45,6 @@ impl Plugin for GuiSystem {
 pub struct GuiParams {
     pub largeur_grille_gen_aleatoire: u16,
     pub grille_active: bool,
-    // pub couleur_bg: Color32,
-    // pub couleur_cellule: Color32,
 }
 
 impl Default for GuiParams {
@@ -55,8 +52,6 @@ impl Default for GuiParams {
         Self {
             largeur_grille_gen_aleatoire: 50_u16,
             grille_active: true,
-            // couleur_bg: Color32::from_rgb(0, 230, 230),
-            // couleur_cellule: Color32::from_rgb(0, 0, 51),
         }
     }
 }
@@ -192,17 +187,6 @@ fn system_gui(
                 ui.label("Tu peux appuyer sur la grille quand la génération est en pause !");
                 ui.label("Utilise les fléches directionnelles pour te déplacer !");
             });
-            // !TODO WIP (WARN COMMAND UNAPPLIED)
-            // separateur(ui);
-            // ui.label("Personnalisation des couleurs :");
-            // ui.horizontal(|ui| {
-            //     ui.label("Fond :");
-            //     color_edit_button_srgba(ui, &mut gui_params.couleur_bg, egui::color_picker::Alpha::BlendOrAdditive);
-            // });
-            // ui.horizontal(|ui| {
-            //     ui.label("Cellules :");
-            //     color_edit_button_srgba(ui, &mut gui_params.couleur_cellule, egui::color_picker::Alpha::BlendOrAdditive);
-            // });
         });
 
     if scale_slider_init != scale_slider_val {
@@ -211,26 +195,6 @@ fn system_gui(
     if speed_slider_init != vitesse_slider {
         cellule_params.periode = Duration::from_secs_f32(slider_to_periode(vitesse_slider));
     }
-
-    // !TODO WIP (WARN COMMAND UNAPPLIED)
-    // commands.insert_resource(ClearColor(Color::srgba_u8(
-    //     gui_params.couleur_bg.r(),
-    //     gui_params.couleur_bg.g(),
-    //     gui_params.couleur_bg.b(),
-    //     gui_params.couleur_bg.a(),
-    // )));
-
-    // for entity in q_cells.iter() {
-    //     commands.entity(entity).insert(Sprite {
-    //         color: Color::srgba_u8(
-    //             gui_params.couleur_cellule.r(),
-    //             gui_params.couleur_cellule.g(),
-    //             gui_params.couleur_cellule.b(),
-    //             gui_params.couleur_cellule.a(),
-    //         ),
-    //         ..Default::default()
-    //     });
-    // }
 }
 
 fn system_dessiner_nouvelle_cellules(
