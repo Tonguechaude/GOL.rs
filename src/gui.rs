@@ -50,7 +50,7 @@ pub struct GuiParams {
 impl Default for GuiParams {
     fn default() -> Self {
         Self {
-            largeur_grille_gen_aleatoire: 50_u16,
+            largeur_grille_gen_aleatoire: 50u16,
             grille_active: true,
         }
     }
@@ -225,18 +225,20 @@ fn system_clique_souris(
     if cellule_params.en_cours || !buttons.just_released(MouseButton::Left) {
         return;
     }
-    let Some(cursor_position) = q_windows.single().cursor_position() else {
+    let Ok(window) = q_windows.get_single() else {
         return;
     };
-    let (camera, camera_transform) = q_camera.single();
-
-    let position_cible = match camera.viewport_to_world(camera_transform, cursor_position) {
-        Ok(ray) => ray.origin.truncate().round(),
-        Err(_) => {
-            eprintln!("T'as cliqué où la bon sang !");
-            return;
-        }
+    let Some(cursor_position) = window.cursor_position() else {
+        return;
     };
+    let Ok((camera, camera_transform)) = q_camera.get_single() else {
+        return;
+    };
+
+    let Ok(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
+        return;
+    };
+    let position_cible = ray.origin.truncate().round();
 
     debug!("Position du clique : {position_cible}");
     let nouvelle_cellule = CellulePosition {
@@ -269,7 +271,9 @@ fn system_entree_clavier(
     if keys.pressed(KeyCode::ArrowDown) {
         y += -1;
     }
-    let mut transform = q_camera_transform.single_mut();
+    let Ok(mut transform) = q_camera_transform.get_single_mut() else {
+        return;
+    };
     transform.translation += Vec3::new(x as f32, y as f32, 0.0);
 }
 
@@ -301,30 +305,32 @@ fn system_dessin_grille(
                     focusable: false,
                 },
             );
-            let visible_top_left = camera
-                .viewport_to_world(camera_transform, Vec2 { x: 0.0, y: 0.0 })
-                .map(|ray| ray.origin.truncate())
-                .unwrap();
+            let Ok(ray_top_left) = camera
+                .viewport_to_world(camera_transform, Vec2 { x: 0.0, y: 0.0 }) else {
+                    return;
+                };
+            let visible_top_left = ray_top_left.origin.truncate();
             let (x_min, y_max) = (
                 visible_top_left.x.round() as isize,
                 visible_top_left.y.round() as isize,
             );
-            let visible_bottom_right = camera
+            let Ok(ray_bottom_right) = camera
                 .viewport_to_world(
                     camera_transform,
                     Vec2 {
                         x: response.rect.right(),
                         y: response.rect.bottom(),
                     },
-                )
-                .map(|ray| ray.origin.truncate())
-                .unwrap();
+                ) else {
+                    return;
+                };
+            let visible_bottom_right = ray_bottom_right.origin.truncate();
             let (x_max, y_min) = (
                 visible_bottom_right.x.round() as isize,
                 visible_bottom_right.y.round() as isize,
             );
             for x in x_min..=x_max {
-                let start = camera
+                let Ok(start) = camera
                     .world_to_viewport(
                         camera_transform,
                         Vec3 {
@@ -332,10 +338,11 @@ fn system_dessin_grille(
                             y: y_min as f32 - 0.5,
                             z: 0.0,
                         },
-                    )
-                    .unwrap();
+                    ) else {
+                        continue;
+                    };
                 let debut = egui::Pos2::new(start.x, start.y);
-                let fin = camera
+                let Ok(fin) = camera
                     .world_to_viewport(
                         camera_transform,
                         Vec3 {
@@ -343,8 +350,9 @@ fn system_dessin_grille(
                             y: y_max as f32 + 0.5,
                             z: 0.0,
                         },
-                    )
-                    .unwrap();
+                    ) else {
+                        continue;
+                    };
                 let fin = egui::Pos2::new(fin.x, fin.y);
                 painter.add(egui::Shape::LineSegment {
                     points: [debut, fin],
@@ -356,7 +364,7 @@ fn system_dessin_grille(
                 });
             }
             for y in y_min..=y_max {
-                let debut = camera
+                let Ok(debut) = camera
                     .world_to_viewport(
                         camera_transform,
                         Vec3 {
@@ -364,10 +372,11 @@ fn system_dessin_grille(
                             y: y as f32 - 0.5,
                             z: 0.0,
                         },
-                    )
-                    .unwrap();
+                    ) else {
+                        continue;
+                    };
                 let debut = egui::Pos2::new(debut.x, debut.y);
-                let fin = camera
+                let Ok(fin) = camera
                     .world_to_viewport(
                         camera_transform,
                         Vec3 {
@@ -375,8 +384,9 @@ fn system_dessin_grille(
                             y: y as f32 - 0.5,
                             z: 0.0,
                         },
-                    )
-                    .unwrap();
+                    ) else {
+                        continue;
+                    };
                 let fin = egui::Pos2::new(fin.x, fin.y);
                 painter.add(egui::Shape::LineSegment {
                     points: [debut, fin],
