@@ -108,6 +108,8 @@ pub fn system_cellules(
                 spawn_candidates.insert(voisin_pos);
             } else if *nb_voisins == 4 {
                 spawn_candidates.remove(&voisin_pos);
+            } else {
+                // Pas d'action nécessaire pour les autres nombres de voisins
             }
         }
     }
