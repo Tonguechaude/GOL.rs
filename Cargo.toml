@@ -9,9 +9,8 @@ license = "GNU - AGPL v3.0"
 [dependencies]
 bevy_egui = "0.32.0"
 egui-modal = "0.6.0"
-
-[dependencies.rand]
-version = "0.9.1"
+getrandom = { version = "0.3", features = ["wasm_js"] } # to enable rand support for wasm32 target
+rand = "0.9.1"
 
 [dependencies.bevy]
 version = "0.15.3"

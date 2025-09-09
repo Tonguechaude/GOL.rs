@@ -70,6 +70,9 @@ Pour exécuter le projet dans un navigateur web en local :
 
 ```bash    
 cargo run --target wasm32-unknown-unknown
+```
+ou
+```bash
 cargo serveur
 ```
     
@@ -80,6 +83,7 @@ Pour compiler le projet en WebAssembly et générer les fichiers JavaScript :
 ```bash
 cargo build --release --target wasm32-unknown-unknown
 wasm-bindgen --no-typescript --out-dir ./webapp/ --target web ./target/wasm32-unknown-unknown/release/jeu_de_la_vie.wasm
+wasm-opt -Oz -o ./webapp/jeu_de_la_vie_bg.wasm ./webapp/jeu_de_la_vie_bg.wasm # Optimize WASM file size
 ```
 
 ## Dépendances
@@ -89,6 +93,7 @@ Ce projet utilise les dépendances suivantes :
 **Bevy** : Moteur de jeu pour l'interface graphique.  
 **egui** : Interface utilisateur pour la version Rust.  
 **rand** : Génération de nombres aléatoires pour l'initialisation de la grille.  
+**getrandom** : génération de nombre aléatoir compatible avbec la cible wasm32
 **wasm-bindgen** : Pour la compatibilité WebAssembly.  
     
 ## Contribuer
@@ -105,12 +110,4 @@ Les contributions sont les bienvenues ! Si vous souhaitez améliorer ce projet, 
     
 On fait que du Logiciel Libre ici !! Blague à part le code est sous licence **GNU GPL v3**
 
-## Rappel pour moi
-
-> :no_entry: NE LIS PAS SI TU N'ES PAS MOI !!
-    
-déploiement en attendant que je me motive à créer les secrets pour github CI/CD : 
-
-    rsync -av --rsh=ssh webapp/* tongue@tonguechaude.fr:/var/www/tonguechaude.github.io/gol
-    
 Amusez-vous bien avec le Jeu de la Vie en Rust ! 🚀
