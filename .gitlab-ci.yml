@@ -1,0 +1,39 @@
+stages:
+  - build
+  - release
+
+variables:
+  BUILD_NAME: "gol"
+  WASM_TARGET: "wasm32-unknown-unknown"
+
+# Build the gol application
+rust_build:
+  stage: build
+  image: rust:latest
+  before_script:
+    - rustup toolchain install nightly --allow-downgrade
+    - rustup default nightly
+    - rustup target add ${WASM_TARGET}
+    - cargo install wasm-bindgen-cli wasm-server-runner
+  script:
+    - cargo build-wasm
+    - wasm-bindgen --no-typescript --out-dir ./webapp/ --target web ./target/${WASM_TARGET}/release/jeu_de_la_vie.wasm
+    - cd webapp
+    - tar czf ../gol.tar.gz .
+  artifacts:
+    paths:
+      - gol.tar.gz
+      - webapp/
+    expire_in: '3 months'
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+
+# Publish tagged releases
+release-publish-tag:
+  stage: release
+  image: curlimages/curl:latest
+  needs: ['rust_build']
+  script:
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file gol.tar.gz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${BUILD_NAME}/${CI_COMMIT_TAG}/gol-${CI_COMMIT_TAG}.tar.gz"'
+  only:
+    - tags
