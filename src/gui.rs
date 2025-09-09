@@ -305,54 +305,52 @@ fn system_dessin_grille(
                     focusable: false,
                 },
             );
-            let Ok(ray_top_left) = camera
-                .viewport_to_world(camera_transform, Vec2 { x: 0.0, y: 0.0 }) else {
-                    return;
-                };
+            let Ok(ray_top_left) =
+                camera.viewport_to_world(camera_transform, Vec2 { x: 0.0, y: 0.0 })
+            else {
+                return;
+            };
             let visible_top_left = ray_top_left.origin.truncate();
             let (x_min, y_max) = (
                 visible_top_left.x.round() as isize,
                 visible_top_left.y.round() as isize,
             );
-            let Ok(ray_bottom_right) = camera
-                .viewport_to_world(
-                    camera_transform,
-                    Vec2 {
-                        x: response.rect.right(),
-                        y: response.rect.bottom(),
-                    },
-                ) else {
-                    return;
-                };
+            let Ok(ray_bottom_right) = camera.viewport_to_world(
+                camera_transform,
+                Vec2 {
+                    x: response.rect.right(),
+                    y: response.rect.bottom(),
+                },
+            ) else {
+                return;
+            };
             let visible_bottom_right = ray_bottom_right.origin.truncate();
             let (x_max, y_min) = (
                 visible_bottom_right.x.round() as isize,
                 visible_bottom_right.y.round() as isize,
             );
             for x in x_min..=x_max {
-                let Ok(start) = camera
-                    .world_to_viewport(
-                        camera_transform,
-                        Vec3 {
-                            x: x as f32 - 0.5,
-                            y: y_min as f32 - 0.5,
-                            z: 0.0,
-                        },
-                    ) else {
-                        continue;
-                    };
+                let Ok(start) = camera.world_to_viewport(
+                    camera_transform,
+                    Vec3 {
+                        x: x as f32 - 0.5,
+                        y: y_min as f32 - 0.5,
+                        z: 0.0,
+                    },
+                ) else {
+                    continue;
+                };
                 let debut = egui::Pos2::new(start.x, start.y);
-                let Ok(fin) = camera
-                    .world_to_viewport(
-                        camera_transform,
-                        Vec3 {
-                            x: x as f32 - 0.5,
-                            y: y_max as f32 + 0.5,
-                            z: 0.0,
-                        },
-                    ) else {
-                        continue;
-                    };
+                let Ok(fin) = camera.world_to_viewport(
+                    camera_transform,
+                    Vec3 {
+                        x: x as f32 - 0.5,
+                        y: y_max as f32 + 0.5,
+                        z: 0.0,
+                    },
+                ) else {
+                    continue;
+                };
                 let fin = egui::Pos2::new(fin.x, fin.y);
                 painter.add(egui::Shape::LineSegment {
                     points: [debut, fin],
@@ -364,29 +362,27 @@ fn system_dessin_grille(
                 });
             }
             for y in y_min..=y_max {
-                let Ok(debut) = camera
-                    .world_to_viewport(
-                        camera_transform,
-                        Vec3 {
-                            x: x_min as f32 - 0.5,
-                            y: y as f32 - 0.5,
-                            z: 0.0,
-                        },
-                    ) else {
-                        continue;
-                    };
+                let Ok(debut) = camera.world_to_viewport(
+                    camera_transform,
+                    Vec3 {
+                        x: x_min as f32 - 0.5,
+                        y: y as f32 - 0.5,
+                        z: 0.0,
+                    },
+                ) else {
+                    continue;
+                };
                 let debut = egui::Pos2::new(debut.x, debut.y);
-                let Ok(fin) = camera
-                    .world_to_viewport(
-                        camera_transform,
-                        Vec3 {
-                            x: x_max as f32 + 0.5,
-                            y: y as f32 - 0.5,
-                            z: 0.0,
-                        },
-                    ) else {
-                        continue;
-                    };
+                let Ok(fin) = camera.world_to_viewport(
+                    camera_transform,
+                    Vec3 {
+                        x: x_max as f32 + 0.5,
+                        y: y as f32 - 0.5,
+                        z: 0.0,
+                    },
+                ) else {
+                    continue;
+                };
                 let fin = egui::Pos2::new(fin.x, fin.y);
                 painter.add(egui::Shape::LineSegment {
                     points: [debut, fin],
