@@ -1,3 +1,9 @@
+//! # GUI Module
+//! 
+//! This module provides the graphical user interface for the Game of Life simulation.
+//! It includes controls for starting/stopping the simulation, adjusting speed,
+//! camera movement, and interactive cell placement.
+
 use std::time::Duration;
 
 use crate::cellule::{CelluleParams, CellulePosition, CelluleSet};
@@ -9,17 +15,28 @@ use bevy_egui::{
 use egui_modal::Modal;
 use rand::Rng;
 
+/// Type alias for time values in seconds
 type Seconds = f32;
 
+/// Background color for the simulation window
 const COULEUR_BG: Color = Color::srgb(0.9, 0.9, 0.9);
+/// Color used to render living cells
 const COULEUR_CELLULE: Color = Color::srgb(0.0, 0.0, 0.0);
 
+/// Default camera scale (zoomed out view)
 const ECHELLE_DEFAUT: f32 = 1.0 / 40.0;
+/// Maximum camera scale (zoomed in view)
 const ECHELLE_MAX: f32 = 1.0;
 
+/// Minimum time period between generations (fastest speed)
 const PERIODE_MIN: Seconds = 0.01;
+/// Maximum time period between generations (slowest speed)
 const PERIODE_MAX: Seconds = 1.5;
 
+/// Bevy plugin that sets up the GUI systems and resources.
+/// 
+/// This plugin adds all the necessary systems for rendering the interface,
+/// handling user input, and drawing the Game of Life grid.
 pub struct GuiSystem;
 
 impl Plugin for GuiSystem {
@@ -41,9 +58,15 @@ impl Plugin for GuiSystem {
     }
 }
 
+/// GUI-specific configuration parameters.
+/// 
+/// Contains settings for the user interface that don't directly
+/// affect the simulation logic but control display options.
 #[derive(Resource, Debug)]
 pub struct GuiParams {
+    /// Width of the grid for random cell generation
     pub largeur_grille_gen_aleatoire: u16,
+    /// Whether to display the grid overlay
     pub grille_active: bool,
 }
 
@@ -56,6 +79,10 @@ impl Default for GuiParams {
     }
 }
 
+/// Initializes the 2D camera for the Game of Life view.
+/// 
+/// Sets up an orthographic camera with a default scale that provides
+/// a good overview of the simulation area.
 fn init_camera(mut commands: Commands) {
     commands.spawn((
         Camera2d,
@@ -68,6 +95,14 @@ fn init_camera(mut commands: Commands) {
     ));
 }
 
+/// Main GUI system that renders the control panel.
+/// 
+/// Creates the main control window with buttons for:
+/// - Starting/stopping the simulation
+/// - Clearing the grid
+/// - Generating random patterns
+/// - Adjusting simulation speed and camera zoom
+/// - Toggling grid display
 fn system_gui(
     mut commands: Commands,
     mut contexts: EguiContexts,
@@ -197,6 +232,10 @@ fn system_gui(
     }
 }
 
+/// System that adds visual components to newly spawned cells.
+/// 
+/// This system runs when cells are first created and adds the necessary
+/// Sprite and Transform components to make them visible on screen.
 fn system_dessiner_nouvelle_cellules(
     mut commands: Commands,
     query: Query<(Entity, &CellulePosition), Added<CellulePosition>>,
@@ -214,6 +253,11 @@ fn system_dessiner_nouvelle_cellules(
     }
 }
 
+/// Handles mouse clicks to toggle cells on/off.
+/// 
+/// When the simulation is paused and the user clicks on the grid,
+/// this system will either create a new cell or remove an existing one
+/// at the clicked position.
 fn system_clique_souris(
     mut commands: Commands,
     cellule_params: Res<CelluleParams>,
@@ -254,6 +298,10 @@ fn system_clique_souris(
     commands.spawn(nouvelle_cellule);
 }
 
+/// Handles keyboard input for camera movement.
+/// 
+/// Arrow keys move the camera around the Game of Life grid,
+/// allowing users to explore different areas of the simulation.
 fn system_entree_clavier(
     keys: Res<ButtonInput<KeyCode>>,
     mut q_camera_transform: Query<&mut Transform, With<Camera>>,
@@ -396,6 +444,10 @@ fn system_dessin_grille(
         });
 }
 
+/// Removes all living cells from the simulation.
+/// 
+/// Used by the "clear grid" functionality to reset the simulation
+/// to an empty state.
 fn nettoyage_cellules(commands: &mut Commands, q_cellules: &Query<Entity, With<CellulePosition>>) {
     let cellules_a_supprimer: Vec<Entity> = q_cellules.iter().collect();
     for entity in cellules_a_supprimer {
@@ -403,6 +455,16 @@ fn nettoyage_cellules(commands: &mut Commands, q_cellules: &Query<Entity, With<C
     }
 }
 
+/// Generates a random pattern of cells in a rectangular area.
+/// 
+/// Creates living cells randomly within the specified bounds.
+/// Each position has a 50% chance of containing a living cell.
+/// 
+/// # Arguments
+/// * `x` - Starting x-coordinate of the generation area
+/// * `y` - Starting y-coordinate of the generation area  
+/// * `largeur` - Width of the generation area
+/// * `hauteur` - Height of the generation area
 fn generation_alleatoire_cellule(
     commands: &mut Commands,
     x: isize,
