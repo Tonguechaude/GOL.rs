@@ -1,5 +1,5 @@
 //! # Conway's Game of Life - Main Application
-//! 
+//!
 //! This is the entry point for the Conway's Game of Life application.
 //! It sets up a Bevy app with the necessary plugins for simulation and GUI.
 
@@ -11,7 +11,7 @@ use cellule::CellSystem;
 use gui::GuiSystem;
 
 /// Entry point for the Conway's Game of Life application.
-/// 
+///
 /// Creates a Bevy app with:
 /// - Default Bevy plugins for rendering and input
 /// - Custom window configuration suitable for web and desktop

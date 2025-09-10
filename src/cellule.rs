@@ -1,5 +1,5 @@
 //! # Cell Module
-//! 
+//!
 //! This module contains the core logic for Conway's Game of Life simulation.
 //! It defines cell positions, simulation parameters, and the rules for cell
 //! birth and death according to Conway's classic rules.
@@ -12,23 +12,15 @@ use std::{
 
 /// The eight neighboring positions relative to any cell.
 /// These offsets represent the Moore neighborhood (all adjacent cells).
-static NEIGHBORS: [(isize, isize); 8] = [
-    (-1, -1),
-    (0, -1),
-    (1, -1),
-    (-1, 0),
-    (1, 0),
-    (-1, 1),
-    (0, 1),
-    (1, 1),
-];
+static NEIGHBORS: [(isize, isize); 8] =
+    [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)];
 
 /// System set for organizing cell-related systems in the Bevy ECS.
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
 pub struct CellSet;
 
 /// Represents the position of a cell in the Game of Life grid.
-/// 
+///
 /// Uses signed integers to allow for negative coordinates,
 /// enabling an infinite grid that can expand in all directions.
 #[derive(Clone, Component, PartialEq, Eq, Debug, Hash)]
@@ -40,7 +32,7 @@ pub struct CellPosition {
 }
 
 /// Configuration parameters for the Game of Life simulation.
-/// 
+///
 /// This resource controls the behavior of the simulation including
 /// whether it's running automatically and at what speed.
 #[derive(Resource, Debug)]
@@ -55,23 +47,19 @@ pub struct CellParams {
 
 impl Default for CellParams {
     fn default() -> Self {
-        Self {
-            running: true,
-            period: Duration::from_secs(1),
-            calculate_next_gen: false,
-        }
+        Self { running: true, period: Duration::from_secs(1), calculate_next_gen: false }
     }
 }
 
 /// Timer resource that controls when to calculate the next generation.
-/// 
+///
 /// Wraps a Bevy Timer to track when enough time has passed
 /// for the next generation update.
 #[derive(Resource)]
 pub struct NewGenTimer(Timer);
 
 /// Bevy plugin that sets up the Game of Life simulation systems.
-/// 
+///
 /// This plugin initializes all necessary resources and systems
 /// for running Conway's Game of Life within a Bevy application.
 pub struct CellSystem;
@@ -89,7 +77,7 @@ impl Plugin for CellSystem {
 }
 
 /// Sets up the initial pattern of living cells.
-/// 
+///
 /// Spawns a simple pattern of cells to start the simulation.
 /// This creates a small glider pattern that will move across the grid.
 pub fn setup_cells(mut commands: Commands) {
@@ -99,7 +87,7 @@ pub fn setup_cells(mut commands: Commands) {
 }
 
 /// Listens for changes to simulation parameters and updates the timer accordingly.
-/// 
+///
 /// When the simulation speed (period) is changed, this system updates
 /// the generation timer to use the new duration.
 pub fn cell_params_listener(my_res: Res<CellParams>, mut timer: ResMut<NewGenTimer>) {
@@ -113,11 +101,11 @@ pub fn cell_params_listener(my_res: Res<CellParams>, mut timer: ResMut<NewGenTim
 }
 
 /// Main system that implements Conway's Game of Life rules.
-/// 
+///
 /// This system runs every frame and:
 /// 1. Checks if it's time to calculate the next generation
 /// 2. Counts neighbors for each cell and potential cell position
-/// 3. Applies Conway's rules: 
+/// 3. Applies Conway's rules:
 ///    - Live cells with 2-3 neighbors survive
 ///    - Dead cells with exactly 3 neighbors become alive
 ///    - All other cells die or stay dead
@@ -146,10 +134,7 @@ pub fn cell_system(
 
     for (_, cell) in &query {
         for &(dx, dy) in &NEIGHBORS {
-            let neighbor_pos = CellPosition {
-                x: cell.x + dx,
-                y: cell.y + dy,
-            };
+            let neighbor_pos = CellPosition { x: cell.x + dx, y: cell.y + dy };
             let neighbor_count = neighbors.entry(neighbor_pos.clone()).or_insert(0);
             *neighbor_count += 1;
             if *neighbor_count == 3 {
