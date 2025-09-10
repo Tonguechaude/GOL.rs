@@ -14,9 +14,9 @@
 //! ## Usage
 //! 
 //! ```no_run
-//! use jeu_de_la_vie::cellule::CellulePosition;
+//! use jeu_de_la_vie::cellule::CellPosition;
 //! 
-//! let cell = CellulePosition { x: 0, y: 0 };
+//! let cell = CellPosition { x: 0, y: 0 };
 //! ```
 
 pub mod cellule;

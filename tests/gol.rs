@@ -2,63 +2,61 @@ use bevy::prelude::*;
 use jeu_de_la_vie::cellule::*;
 
 #[test]
-fn test_setup_cellule() {
+fn test_setup_cells() {
     let mut app = App::new();
-    app.add_plugins(MinimalPlugins)
-        .add_systems(Startup, setup_cellule)
-        .update();
+    app.add_plugins(MinimalPlugins).add_systems(Startup, setup_cells).update();
 
     let world_mut = app.world_mut();
-    let mut query = world_mut.query::<&CellulePosition>();
-    let cellules: Vec<_> = query.iter(&world_mut).collect();
+    let mut query = world_mut.query::<&CellPosition>();
+    let cells: Vec<_> = query.iter(&world_mut).collect();
 
-    // Vérifier que les cellules initiales sont bien placées
+    // Verify that initial cells are correctly placed
     let expected_positions = vec![
-        CellulePosition { x: 0, y: 0 },
-        CellulePosition { x: -1, y: 0 },
-        CellulePosition { x: 0, y: -1 },
-        CellulePosition { x: 0, y: 1 },
-        CellulePosition { x: 1, y: 1 },
+        CellPosition { x: 0, y: 0 },
+        CellPosition { x: -1, y: 0 },
+        CellPosition { x: 0, y: -1 },
+        CellPosition { x: 0, y: 1 },
+        CellPosition { x: 1, y: 1 },
     ];
 
-    assert_eq!(cellules.len(), expected_positions.len());
+    assert_eq!(cells.len(), expected_positions.len());
     for pos in &expected_positions {
-        assert!(cellules.contains(&pos), "Cellule absente : {:?}", pos);
+        assert!(cells.contains(&pos), "Missing cell: {:?}", pos);
     }
 }
 
 #[test]
-fn test_update_cellule2() {
+fn test_update_cells2() {
     let mut app = App::new();
-    app.add_plugins(MinimalPlugins).add_plugins(CelluleSystem);
+    app.add_plugins(MinimalPlugins).add_plugins(CellSystem);
 
     app.update();
 
     {
-        let mut cellule_params = app.world_mut().resource_mut::<CelluleParams>();
-        cellule_params.en_cours = false; // Stoppe le timer
-        cellule_params.calcule_prochaine_gen = true; // Force l'exécution
+        let mut cell_params = app.world_mut().resource_mut::<CellParams>();
+        cell_params.running = false; // Stop the timer
+        cell_params.calculate_next_gen = true; // Force execution
     }
 
     app.update();
 
     let world = app.world_mut();
-    let mut query = world.query::<&CellulePosition>();
-    let cellules: Vec<_> = query.iter(world).collect();
+    let mut query = world.query::<&CellPosition>();
+    let cells: Vec<_> = query.iter(world).collect();
 
-    println!("Cellules après 1 itération : {:?}", cellules);
+    println!("Cells after 1 iteration: {:?}", cells);
 
     let expected_positions = vec![
-        CellulePosition { x: 0, y: -1 },
-        CellulePosition { x: -1, y: -1 },
-        CellulePosition { x: -1, y: -1 },
-        CellulePosition { x: -1, y: 1 },
-        CellulePosition { x: 0, y: 1 },
-        CellulePosition { x: 1, y: 1 },
+        CellPosition { x: 0, y: -1 },
+        CellPosition { x: -1, y: -1 },
+        CellPosition { x: -1, y: -1 },
+        CellPosition { x: -1, y: 1 },
+        CellPosition { x: 0, y: 1 },
+        CellPosition { x: 1, y: 1 },
     ];
 
-    assert_eq!(cellules.len(), expected_positions.len());
+    assert_eq!(cells.len(), expected_positions.len());
     for pos in &expected_positions {
-        assert!(cellules.contains(&pos), "Cellule absente : {:?}", pos);
+        assert!(cells.contains(&pos), "Missing cell: {:?}", pos);
     }
 }

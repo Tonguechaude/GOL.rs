@@ -7,7 +7,7 @@ mod cellule;
 mod gui;
 
 use bevy::prelude::*;
-use cellule::CelluleSystem;
+use cellule::CellSystem;
 use gui::GuiSystem;
 
 /// Entry point for the Conway's Game of Life application.
@@ -15,7 +15,7 @@ use gui::GuiSystem;
 /// Creates a Bevy app with:
 /// - Default Bevy plugins for rendering and input
 /// - Custom window configuration suitable for web and desktop
-/// - Game of Life simulation plugin (CelluleSystem)
+/// - Game of Life simulation plugin (CellSystem)
 /// - GUI plugin for user controls (GuiSystem)
 fn main() {
     App::new()
@@ -27,7 +27,7 @@ fn main() {
             }),
             ..Default::default()
         }))
-        .add_plugins(CelluleSystem)
+        .add_plugins(CellSystem)
         .add_plugins(GuiSystem)
         .run();
 }
