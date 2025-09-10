@@ -18,7 +18,3 @@ install-deps:
 	curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 	cargo install wasm-bindgen-cli wasm-server-runner
 .PHONY: install-deps
-
-lint:
-	cargo clippy --all -- -W clippy::all -W clippy::pedantic -W clippy::restriction -W clippy::nursery -D warnings
-.PHONY: lint
