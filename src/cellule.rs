@@ -92,7 +92,7 @@ pub fn setup_cells(mut commands: Commands) {
 /// the generation timer to use the new duration.
 pub fn cell_params_listener(my_res: Res<CellParams>, mut timer: ResMut<NewGenTimer>) {
     if my_res.is_changed() {
-        debug!("CellParams updated: {:?}", *my_res);
+        dbg!("CellParams updated: {:?}", &my_res);
         if my_res.period != timer.0.duration() {
             timer.0.set_duration(my_res.period);
             timer.0.reset();

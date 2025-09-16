@@ -7,13 +7,12 @@ description = "Implémentation du Jeu de la vie en Rust et WASM avec Bevy"
 license = "GNU - AGPL v3.0"
 
 [dependencies]
-bevy_egui = "0.32.0"
-egui-modal = "0.6.0"
-getrandom = { version = "0.3.3", features = ["wasm_js"] } # to enable rand support for wasm32 target
 rand = "0.9.2"
+bevy_egui = "0.36.0"
+getrandom = { version = "0.3.3", features = ["wasm_js"] } # to enable rand support for wasm32 target
 
 [dependencies.bevy]
-version = "0.15.3"
+version = "0.16.1"
 default-features = false
 features = [
     # Fonctionnalitées de Bevy :

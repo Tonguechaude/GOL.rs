@@ -9,10 +9,9 @@ use std::time::Duration;
 use crate::cellule::{CellParams, CellPosition, CellSet};
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::{
-    EguiContexts, EguiPlugin,
-    egui::{self, Color32, Ui},
+    egui::{self, Color32, Ui}, EguiContexts, EguiPlugin, EguiPrimaryContextPass
 };
-use egui_modal::Modal;
+use bevy::render::camera::ScalingMode;
 use rand::Rng;
 
 /// Type alias for time values in seconds
@@ -46,19 +45,22 @@ impl Plugin for GuiSystem {
     fn build(&self, app: &mut App) {
         app.insert_resource(ClearColor(BG_COLOR))
             .insert_resource(GuiParams::default())
-            .add_plugins(EguiPlugin)
+            .add_plugins(EguiPlugin::default())
             .add_systems(Startup, init_camera)
-            .add_systems(Update, keyboard_input_system.before(gui_system))
-            .add_systems(Update, gui_system)
+            .add_systems(Update, keyboard_input_system)
             .add_systems(Update, mouse_click_system)
             .add_systems(Update, draw_new_cells_system.before(CellSet))
             .add_systems(
-                Update,
-                draw_grid_system
-                    .after(draw_new_cells_system)
-                    .run_if(|gui_params: Res<GuiParams>| gui_params.grid_visible),
+                EguiPrimaryContextPass, 
+                (gui_system, draw_grid_system).chain()
             );
     }
+}
+
+#[derive(Default)]
+pub struct ModalState {
+    show_reset: bool,
+    show_random: bool,
 }
 
 /// GUI-specific configuration parameters.
@@ -84,14 +86,16 @@ impl Default for GuiParams {
 /// Sets up an orthographic camera with a default scale that provides
 /// a good overview of the simulation area.
 fn init_camera(mut commands: Commands) {
+    let projection = Projection::Orthographic(OrthographicProjection {
+      scaling_mode: ScalingMode::WindowSize,
+        scale: DEFAULT_SCALE,
+        far: 1000.0,
+        near: -1000.0,
+        ..OrthographicProjection::default_2d()
+    });
     commands.spawn((
         Camera2d,
-        OrthographicProjection {
-            scale: DEFAULT_SCALE,
-            far: 1000.0,
-            near: -1000.0,
-            ..OrthographicProjection::default_2d()
-        },
+        projection
     ));
 }
 
@@ -108,68 +112,44 @@ fn gui_system(
     mut contexts: EguiContexts,
     mut cell_params: ResMut<CellParams>,
     mut gui_params: ResMut<GuiParams>,
-    mut q_camera: Query<(&mut OrthographicProjection, &GlobalTransform)>,
+    mut q_camera: Query<(&mut Projection, &GlobalTransform)>,
     q_cells: Query<Entity, With<CellPosition>>,
+    mut modal_state: Local<ModalState>,
 ) {
-    let ctx = contexts.ctx_mut();
+    let Ok(ctx) = contexts.ctx_mut() else {
+        return;
+    };
     ctx.set_visuals(egui::style::Visuals::light());
-    let (mut camera_proj, camera_transform) = match q_camera.get_single_mut() {
-        Ok(data) => data,
-        Err(_) => return,
+    
+    let Ok((mut camera_projection, camera_transform)) = q_camera.single_mut() else {
+        eprintln!("Erreur camera: impossible d'obtenir une seule caméra");
+        return;
     };
-    let speed_slider_init = period_to_slider(cell_params.period.as_secs_f32());
-    let mut speed_slider = speed_slider_init;
-    let scale_slider_init = scale_to_slider(camera_proj.scale);
-    let mut scale_slider_val = scale_slider_init;
 
-    let reset_modal = {
-        let modal = Modal::new(ctx, "reset_modal");
-        modal.show(|ui| {
-            modal.title(ui, "Kill all cells!");
-            modal.frame(ui, |ui| {
-                modal.body(ui, "Kill all cells?");
-            });
-            modal.buttons(ui, |ui| {
-                modal.button(ui, "No");
-                if modal.button(ui, "Yes").clicked() {
-                    cell_params.running = false;
-                    clear_cells(&mut commands, &q_cells);
-                };
-            });
-        });
-        modal
-    };
-    let random_modal = {
-        let modal = Modal::new(ctx, "random_modal");
-        modal.show(|ui| {
-            modal.title(ui, "Random Generation");
-            modal.frame(ui, |ui| {
-                modal.body(ui, "Fill grid randomly?");
-            });
-            modal.buttons(ui, |ui| {
-                modal.button(ui, "No");
-                if modal.button(ui, "Yes").clicked() {
-                    let offset = -(gui_params.random_grid_width as isize) / 2;
-                    let width = gui_params.random_grid_width as usize;
-                    clear_cells(&mut commands, &q_cells);
-                    generate_random_cells(&mut commands, offset, offset, width, width);
-                };
-            });
-        });
-        modal
-    };
+    let (speed_slider_init, scale_slider_init, mut scale_slider_val) = 
+        match camera_projection.as_mut() {
+            Projection::Orthographic(orthographic) => {
+                let speed_slider = period_to_slider(cell_params.period.as_secs_f32());
+                let scale_slider = scale_to_slider(orthographic.scale);
+                (speed_slider, scale_slider, scale_slider)
+            },
+            _ => return,
+        };
+    
+    let mut speed_slider = speed_slider_init;
+
     let separator = |ui: &mut Ui| ui.add(egui::Separator::default());
 
     egui::Window::new("Game of Life").resizable(false).show(ctx, |ui| {
         ui.horizontal(|ui| {
             if ui.button("Clear Grid").clicked() {
-                reset_modal.open();
+                modal_state.show_reset = true;
             }
         });
         ui.horizontal(|ui| {
             ui.add(egui::DragValue::new(&mut gui_params.random_grid_width).suffix(" width"));
             if ui.button("Random Cells").clicked() {
-                random_modal.open();
+                modal_state.show_random = true;
             }
         });
         separator(ui);
@@ -211,12 +191,202 @@ fn gui_system(
         });
     });
 
-    if scale_slider_init != scale_slider_val {
-        camera_proj.scale = slider_to_scale(scale_slider_val);
+    if modal_state.show_reset {
+        egui::Area::new(egui::Id::new("reset_overlay"))
+            .fixed_pos(egui::Pos2::ZERO)
+            .show(ctx, |ui| {
+                let screen_rect = ctx.input(|i| i.screen_rect);
+                ui.allocate_response(screen_rect.size(), egui::Sense::click());
+                ui.painter().rect_filled(
+                    screen_rect, 
+                    egui::CornerRadius::ZERO, 
+                    egui::Color32::from_rgba_premultiplied(0, 0, 0, 150)
+                );
+            });     
+        
+        egui::Window::new("⚠ Kill all cells!")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+            .show(ctx, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.add_space(10.0);
+                    ui.label("Are you sure you want to kill all cells?");
+                    ui.add_space(15.0);
+                    
+                    ui.horizontal(|ui| {
+                        ui.spacing_mut().button_padding = egui::Vec2::new(20.0, 10.0);
+                        
+                        if ui.button("No").clicked() {
+                            modal_state.show_reset = false;
+                        }
+                        
+                        ui.add_space(10.0);
+                        
+                        let delete_btn = egui::Button::new("Yes")
+                            .fill(egui::Color32::from_rgb(180, 50, 50));
+                        if ui.add(delete_btn).clicked() {
+                            cell_params.running = false;
+                            clear_cells(&mut commands, &q_cells);
+                            modal_state.show_reset = false;
+                        }
+                    });
+                    ui.add_space(5.0);
+                });
+            });
     }
+
+    if modal_state.show_random {
+        egui::Area::new(egui::Id::new("random_overlay"))
+            .fixed_pos(egui::Pos2::ZERO)
+            .show(ctx, |ui| {
+                let screen_rect = ctx.input(|i| i.screen_rect);
+                ui.allocate_response(screen_rect.size(), egui::Sense::click());
+                ui.painter().rect_filled(
+                    screen_rect, 
+                    egui::CornerRadius::ZERO, 
+                    egui::Color32::from_rgba_premultiplied(0, 0, 0, 150)
+                );
+            });
+
+        egui::Window::new("Random Generation")
+            .collapsible(false)
+            .resizable(false)
+            .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+            .show(ctx, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.add_space(10.0);
+                    ui.label("Fill the grid with random cells?");
+                    ui.add_space(5.0);
+                    ui.label(format!("Grid size: {}×{}", gui_params.random_grid_width, gui_params.random_grid_width));
+                    ui.add_space(15.0);
+                    
+                    ui.horizontal(|ui| {
+                        ui.spacing_mut().button_padding = egui::Vec2::new(20.0, 10.0);
+                        
+                        if ui.button("No").clicked() {
+                            modal_state.show_random = false;
+                        }
+                        
+                        ui.add_space(10.0);
+                        
+                        let generate_btn = egui::Button::new("Yes")
+                            .fill(egui::Color32::from_rgb(50, 100, 180));
+                        if ui.add(generate_btn).clicked() {
+                            let offset = -(gui_params.random_grid_width as isize) / 2;
+                            let width = gui_params.random_grid_width as usize;
+                            clear_cells(&mut commands, &q_cells);
+                            generate_random_cells(&mut commands, offset, offset, width, width);
+                            modal_state.show_random = false;
+                        }
+                    });
+                    ui.add_space(5.0);
+                });
+            });
+    }
+
+    if let Projection::Orthographic(orthographic) = camera_projection.as_mut() {
+        if scale_slider_init != scale_slider_val {
+            orthographic.scale = slider_to_scale(scale_slider_val);
+        }
+    }
+
     if speed_slider_init != speed_slider {
         cell_params.period = Duration::from_secs_f32(slider_to_period(speed_slider));
     }
+}
+
+fn draw_grid_system(
+    mut contexts: EguiContexts,
+    gui_params: Res<GuiParams>,
+    q_camera: Query<(&Camera, &Projection, &GlobalTransform)>,
+) {
+    if !gui_params.grid_visible {
+        return;
+    }
+    
+    const LINE_COLOR: Color32 = Color32::BLACK;
+    let (camera, camera_projection, camera_transform) = match q_camera.single() {
+        Ok(data) => data,
+        Err(_) => return,
+    };
+
+    let camera_scale = match camera_projection {
+        Projection::Orthographic(orthographic) => orthographic.scale,
+        _ => return,
+    };
+
+    let Ok(ctx) = contexts.ctx_mut() else {
+        return;
+    };
+    
+    let transparent_frame =
+        egui::containers::Frame { fill: Color32::TRANSPARENT, ..Default::default() };
+    let line_width = (1.0 - (camera_scale - DEFAULT_SCALE) / (MAX_SCALE - DEFAULT_SCALE)).powi(10);
+
+    egui::CentralPanel::default().frame(transparent_frame).show(ctx, |ui| {
+        let (response, painter) = ui.allocate_painter(
+            bevy_egui::egui::Vec2::new(ui.available_width(), ui.available_height()),
+            egui::Sense::hover()
+        );
+        let Ok(ray_top_left) = camera.viewport_to_world(camera_transform, Vec2 { x: 0.0, y: 0.0 })
+        else {
+            return;
+        };
+        let visible_top_left = ray_top_left.origin.truncate();
+        let (x_min, y_max) =
+            (visible_top_left.x.round() as isize, visible_top_left.y.round() as isize);
+        let Ok(ray_bottom_right) = camera.viewport_to_world(
+            camera_transform,
+            Vec2 { x: response.rect.right(), y: response.rect.bottom() },
+        ) else {
+            return;
+        };
+        let visible_bottom_right = ray_bottom_right.origin.truncate();
+        let (x_max, y_min) =
+            (visible_bottom_right.x.round() as isize, visible_bottom_right.y.round() as isize);
+        
+        for x in x_min..=x_max {
+            let Ok(start) = camera.world_to_viewport(
+                camera_transform,
+                Vec3 { x: x as f32 - 0.5, y: y_min as f32 - 0.5, z: 0.0 },
+            ) else {
+                continue;
+            };
+            let start_pos = egui::Pos2::new(start.x, start.y);
+            let Ok(end) = camera.world_to_viewport(
+                camera_transform,
+                Vec3 { x: x as f32 - 0.5, y: y_max as f32 + 0.5, z: 0.0 },
+            ) else {
+                continue;
+            };
+            let end_pos = egui::Pos2::new(end.x, end.y);   
+            painter.add(egui::Shape::LineSegment {
+                points: [start_pos, end_pos],
+                stroke: egui::Stroke { width: line_width, color: LINE_COLOR }.into(),
+            });
+        }
+        for y in y_min..=y_max {
+            let Ok(start) = camera.world_to_viewport(
+                camera_transform,
+                Vec3 { x: x_min as f32 - 0.5, y: y as f32 - 0.5, z: 0.0 },
+            ) else {
+                continue;
+            };
+            let start_pos = egui::Pos2::new(start.x, start.y);
+            let Ok(end) = camera.world_to_viewport(
+                camera_transform,
+                Vec3 { x: x_max as f32 + 0.5, y: y as f32 - 0.5, z: 0.0 },
+            ) else {
+                continue;
+            };
+            let end_pos = egui::Pos2::new(end.x, end.y);
+            painter.add(egui::Shape::LineSegment {
+                points: [start_pos, end_pos],
+                stroke: egui::Stroke { width: line_width, color: LINE_COLOR }.into(),
+            });
+        }
+    });
 }
 
 /// System that adds visual components to newly spawned cells.
@@ -254,13 +424,13 @@ fn mouse_click_system(
     if cell_params.running || !buttons.just_released(MouseButton::Left) {
         return;
     }
-    let Ok(window) = q_windows.get_single() else {
+    let Ok(window) = q_windows.single() else {
         return;
     };
     let Some(cursor_position) = window.cursor_position() else {
         return;
     };
-    let Ok((camera, camera_transform)) = q_camera.get_single() else {
+    let Ok((camera, camera_transform)) = q_camera.single() else {
         return;
     };
 
@@ -269,7 +439,7 @@ fn mouse_click_system(
     };
     let position_cible = ray.origin.truncate().round();
 
-    debug!("Click position: {position_cible}");
+    dbg!("Click position: {position_cible}");
     let new_cell = CellPosition { x: position_cible.x as isize, y: position_cible.y as isize };
     for (entity, cell_position) in q_cellpos.iter() {
         if cell_position == &new_cell {
@@ -293,7 +463,7 @@ fn keyboard_input_system(
     mut commands: Commands,
     mut cell_params: ResMut<CellParams>,
     mut q_camera_transform: Query<&mut Transform, With<Camera>>,
-    mut q_camera: Query<(&mut OrthographicProjection, &GlobalTransform)>,
+    mut q_camera: Query<(&mut Projection, &GlobalTransform)>,
     q_cells: Query<Entity, With<CellPosition>>
 ) {
     let (mut x, mut y) = (0, 0);
@@ -309,12 +479,12 @@ fn keyboard_input_system(
     if keys.pressed(KeyCode::ArrowDown) || keys.pressed(KeyCode::KeyJ) {
         y += -1;
     }
-    let Ok(mut transform) = q_camera_transform.get_single_mut() else {
+    let Ok(mut transform) = q_camera_transform.single_mut() else {
         return;
     };
     transform.translation += Vec3::new(x as f32, y as f32, 0.0);
 
-    let (mut camera_proj, _) = match q_camera.get_single_mut() {
+    let (mut camera_proj, _) = match q_camera.single_mut() {
         Ok(data) => data,
         Err(_) => return,
     };
@@ -335,93 +505,16 @@ fn keyboard_input_system(
     }
 
     // Zoom controls
-    if keys.just_pressed(KeyCode::KeyI) {
-        // Zoom in (decrease scale to get closer)
-        camera_proj.scale = (camera_proj.scale / (1.0 + ZOOM_STEP)).max(DEFAULT_SCALE);
-    }
-    if keys.just_pressed(KeyCode::KeyO) {
-        // Zoom out (increase scale to get farther)
-        camera_proj.scale = (camera_proj.scale * (1.0 + ZOOM_STEP)).min(MAX_SCALE);
-    }
-}
-
-fn draw_grid_system(
-    mut contexts: EguiContexts,
-    q_camera: Query<(&Camera, &OrthographicProjection, &GlobalTransform)>,
-) {
-    const LINE_COLOR: Color32 = Color32::BLACK;
-    let (camera, camera_proj, camera_transform) = match q_camera.get_single() {
-        Ok(data) => data,
-        Err(_) => return,
-    };
-    let ctx = contexts.ctx_mut();
-    let transparent_frame =
-        egui::containers::Frame { fill: Color32::TRANSPARENT, ..Default::default() };
-    let line_width =
-        (1.0 - (camera_proj.scale - DEFAULT_SCALE) / (MAX_SCALE - DEFAULT_SCALE)).powi(10);
-
-    egui::CentralPanel::default().frame(transparent_frame).show(ctx, |ui| {
-        let (response, painter) = ui.allocate_painter(
-            bevy_egui::egui::Vec2::new(ui.available_width(), ui.available_height()),
-            egui::Sense { click: false, drag: false, focusable: false },
-        );
-        let Ok(ray_top_left) = camera.viewport_to_world(camera_transform, Vec2 { x: 0.0, y: 0.0 })
-        else {
-            return;
-        };
-        let visible_top_left = ray_top_left.origin.truncate();
-        let (x_min, y_max) =
-            (visible_top_left.x.round() as isize, visible_top_left.y.round() as isize);
-        let Ok(ray_bottom_right) = camera.viewport_to_world(
-            camera_transform,
-            Vec2 { x: response.rect.right(), y: response.rect.bottom() },
-        ) else {
-            return;
-        };
-        let visible_bottom_right = ray_bottom_right.origin.truncate();
-        let (x_max, y_min) =
-            (visible_bottom_right.x.round() as isize, visible_bottom_right.y.round() as isize);
-        for x in x_min..=x_max {
-            let Ok(start) = camera.world_to_viewport(
-                camera_transform,
-                Vec3 { x: x as f32 - 0.5, y: y_min as f32 - 0.5, z: 0.0 },
-            ) else {
-                continue;
-            };
-            let start_pos = egui::Pos2::new(start.x, start.y);
-            let Ok(end) = camera.world_to_viewport(
-                camera_transform,
-                Vec3 { x: x as f32 - 0.5, y: y_max as f32 + 0.5, z: 0.0 },
-            ) else {
-                continue;
-            };
-            let end_pos = egui::Pos2::new(end.x, end.y);
-            painter.add(egui::Shape::LineSegment {
-                points: [start_pos, end_pos],
-                stroke: egui::Stroke { width: line_width, color: LINE_COLOR }.into(),
-            });
+    if let Projection::Orthographic(orthographic) = camera_proj.as_mut() {
+        if keys.just_pressed(KeyCode::KeyI) {
+            // Zoom in (decrease scale to get closer)
+            orthographic.scale = (orthographic.scale / (1.0 + ZOOM_STEP)).max(DEFAULT_SCALE);
         }
-        for y in y_min..=y_max {
-            let Ok(start) = camera.world_to_viewport(
-                camera_transform,
-                Vec3 { x: x_min as f32 - 0.5, y: y as f32 - 0.5, z: 0.0 },
-            ) else {
-                continue;
-            };
-            let start_pos = egui::Pos2::new(start.x, start.y);
-            let Ok(end) = camera.world_to_viewport(
-                camera_transform,
-                Vec3 { x: x_max as f32 + 0.5, y: y as f32 - 0.5, z: 0.0 },
-            ) else {
-                continue;
-            };
-            let end_pos = egui::Pos2::new(end.x, end.y);
-            painter.add(egui::Shape::LineSegment {
-                points: [start_pos, end_pos],
-                stroke: egui::Stroke { width: line_width, color: LINE_COLOR }.into(),
-            });
+        if keys.just_pressed(KeyCode::KeyO) {
+            // Zoom out (increase scale to get farther)
+            orthographic.scale = (orthographic.scale * (1.0 + ZOOM_STEP)).min(MAX_SCALE);
         }
-    });
+    }
 }
 
 /// Removes all living cells from the simulation.
