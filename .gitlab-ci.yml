@@ -14,7 +14,8 @@ rust_build:
     - rustup toolchain install nightly --allow-downgrade
     - rustup default nightly
     - rustup target add ${WASM_TARGET}
-    - cargo install wasm-bindgen-cli wasm-server-runner
+    - cargo install -f wasm-bindgen-cli --version 0.2.101
+    - cargo install wasm-server-runner
   script:
     - cargo build-wasm
     - wasm-bindgen --no-typescript --out-dir ./webapp/ --target web ./target/${WASM_TARGET}/release/jeu_de_la_vie.wasm
