@@ -286,16 +286,16 @@ fn keyboard_input_system(
     mut q_camera_transform: Query<&mut Transform, With<Camera>>,
 ) {
     let (mut x, mut y) = (0, 0);
-    if keys.pressed(KeyCode::ArrowLeft) {
+    if keys.pressed(KeyCode::ArrowLeft) || keys.pressed(KeyCode::KeyH) {
         x += -1;
     }
-    if keys.pressed(KeyCode::ArrowRight) {
+    if keys.pressed(KeyCode::ArrowRight) || keys.pressed(KeyCode::KeyL){
         x += 1;
     }
-    if keys.pressed(KeyCode::ArrowUp) {
+    if keys.pressed(KeyCode::ArrowUp) || keys.pressed(KeyCode::KeyK) {
         y += 1;
     }
-    if keys.pressed(KeyCode::ArrowDown) {
+    if keys.pressed(KeyCode::ArrowDown) || keys.pressed(KeyCode::KeyJ) {
         y += -1;
     }
     let Ok(mut transform) = q_camera_transform.get_single_mut() else {
