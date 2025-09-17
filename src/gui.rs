@@ -33,6 +33,9 @@ const MIN_PERIOD: Seconds = 0.01;
 /// Maximum time period between generations (slowest speed)
 const MAX_PERIOD: Seconds = 1.5;
 
+/// Zoom step factor for keyboard zoom controls
+const ZOOM_STEP: f32 = 0.1;
+
 /// Bevy plugin that sets up the GUI systems and resources.
 ///
 /// This plugin adds all the necessary systems for rendering the interface,
@@ -45,9 +48,9 @@ impl Plugin for GuiSystem {
             .insert_resource(GuiParams::default())
             .add_plugins(EguiPlugin)
             .add_systems(Startup, init_camera)
+            .add_systems(Update, keyboard_input_system.before(gui_system))
             .add_systems(Update, gui_system)
             .add_systems(Update, mouse_click_system)
-            .add_systems(Update, keyboard_input_system)
             .add_systems(Update, draw_new_cells_system.before(CellSet))
             .add_systems(
                 Update,
@@ -284,6 +287,7 @@ fn mouse_click_system(
 fn keyboard_input_system(
     keys: Res<ButtonInput<KeyCode>>,
     mut q_camera_transform: Query<&mut Transform, With<Camera>>,
+    mut q_camera: Query<(&mut OrthographicProjection, &GlobalTransform)>
 ) {
     let (mut x, mut y) = (0, 0);
     if keys.pressed(KeyCode::ArrowLeft) || keys.pressed(KeyCode::KeyH) {
@@ -302,6 +306,21 @@ fn keyboard_input_system(
         return;
     };
     transform.translation += Vec3::new(x as f32, y as f32, 0.0);
+
+    let (mut camera_proj, _) = match q_camera.get_single_mut() {
+        Ok(data) => data,
+        Err(_) => return,
+    };
+
+    // Zoom controls
+    if keys.just_pressed(KeyCode::KeyI) {
+        // Zoom in (decrease scale to get closer)
+        camera_proj.scale = (camera_proj.scale / (1.0 + ZOOM_STEP)).max(DEFAULT_SCALE);
+    }
+    if keys.just_pressed(KeyCode::KeyO) {
+        // Zoom out (increase scale to get farther)
+        camera_proj.scale = (camera_proj.scale * (1.0 + ZOOM_STEP)).min(MAX_SCALE);
+    }
 }
 
 fn draw_grid_system(
