@@ -280,14 +280,21 @@ fn mouse_click_system(
     commands.spawn(new_cell);
 }
 
-/// Handles keyboard input for camera movement.
+/// Handles keyboard input for camera movement and simulation controls.
 ///
-/// Arrow keys move the camera around the Game of Life grid,
-/// allowing users to explore different areas of the simulation.
+/// Controls:
+/// - Arrow keys (or hjkl) move the camera around the Game of Life grid
+/// - Spacebar toggles play/pause of the simulation
+/// - R key resets/clears the grid
+/// - N key advances to next generation (only when paused)
+/// - I/O keys control zoom in/out
 fn keyboard_input_system(
     keys: Res<ButtonInput<KeyCode>>,
+    mut commands: Commands,
+    mut cell_params: ResMut<CellParams>,
     mut q_camera_transform: Query<&mut Transform, With<Camera>>,
-    mut q_camera: Query<(&mut OrthographicProjection, &GlobalTransform)>
+    mut q_camera: Query<(&mut OrthographicProjection, &GlobalTransform)>,
+    q_cells: Query<Entity, With<CellPosition>>
 ) {
     let (mut x, mut y) = (0, 0);
     if keys.pressed(KeyCode::ArrowLeft) || keys.pressed(KeyCode::KeyH) {
@@ -311,6 +318,21 @@ fn keyboard_input_system(
         Ok(data) => data,
         Err(_) => return,
     };
+
+    // Simulation controls
+    if keys.just_pressed(KeyCode::Space) {
+        // Toggle play/pause
+        cell_params.running = !cell_params.running;
+    }
+    if keys.just_pressed(KeyCode::KeyR) {
+        // Reset/clear grid
+        cell_params.running = false;
+        clear_cells(&mut commands, &q_cells);
+    }
+    if keys.just_pressed(KeyCode::KeyN) && !cell_params.running {
+        // Next generation (only when paused)
+        cell_params.calculate_next_gen = true;
+    }
 
     // Zoom controls
     if keys.just_pressed(KeyCode::KeyI) {
