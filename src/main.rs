@@ -5,10 +5,14 @@
 
 mod cellule;
 mod gui;
+mod info;
 
 use bevy::prelude::*;
 use cellule::CellSystem;
 use gui::GuiSystem;
+use bevy::diagnostic::*;
+use info::FpsConfig;
+
 
 /// Entry point for the Conway's Game of Life application.
 ///
@@ -29,5 +33,8 @@ fn main() {
         }))
         .add_plugins(CellSystem)
         .add_plugins(GuiSystem)
+        .add_plugins(FrameTimeDiagnosticsPlugin::default())
+        .insert_resource(FpsConfig::default())
+        .add_systems(Update, info::print_fps_timed)
         .run();
 }

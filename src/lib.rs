@@ -21,3 +21,4 @@
 
 pub mod cellule;
 pub mod gui;
+pub mod info;
