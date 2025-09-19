@@ -36,6 +36,9 @@ const MAX_PERIOD: Seconds = 1.5;
 /// Zoom step factor for keyboard zoom controls
 const ZOOM_STEP: f32 = 0.1;
 
+const BASE_SPEED: f32 = 25.0;
+const MAX_SPEED: f32 = 125.0;
+
 /// Bevy plugin that sets up the GUI systems and resources.
 ///
 /// This plugin adds all the necessary systems for rendering the interface,
@@ -48,7 +51,7 @@ impl Plugin for GuiSystem {
             .insert_resource(GuiParams::default())
             .add_plugins(EguiPlugin::default())
             .add_systems(Startup, init_camera)
-            .add_systems(Update, keyboard_input_system)
+            .add_systems(Update, keyboard_input_system_config)
             .add_systems(Update, mouse_click_system)
             .add_systems(Update, draw_new_cells_system.before(CellSet))
             .add_systems(
@@ -62,6 +65,11 @@ impl Plugin for GuiSystem {
 pub struct ModalState {
     show_reset: bool,
     show_random: bool,
+}
+
+#[derive(Resource, Default)]
+pub struct CameraMovementConfig {
+    turbo_mode: bool,
 }
 
 /// GUI-specific configuration parameters.
@@ -459,31 +467,35 @@ fn mouse_click_system(
 /// - R key resets/clears the grid
 /// - N key advances to next generation (only when paused)
 /// - I/O keys control zoom in/out
-fn keyboard_input_system(
+fn keyboard_input_system_config(
     keys: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
     mut cell_params: ResMut<CellParams>,
     mut q_camera_transform: Query<&mut Transform, With<Camera>>,
     mut q_camera: Query<(&mut Projection, &GlobalTransform)>,
-    q_cells: Query<Entity, With<CellPosition>>
+    q_cells: Query<Entity, With<CellPosition>>,
+    time: Res<Time>,
+    mut movement_config: ResMut<CameraMovementConfig>,
 ) {
-    let (mut x, mut y) = (0, 0);
+    let (mut x, mut y) = (0.0, 0.0);
+
+    movement_config.turbo_mode = keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight);
+
     if keys.pressed(KeyCode::ArrowLeft) || keys.pressed(KeyCode::KeyH) {
-        x += -1;
+        x -= 1.0;
     }
     if keys.pressed(KeyCode::ArrowRight) || keys.pressed(KeyCode::KeyL){
-        x += 1;
+        x += 1.0;
     }
     if keys.pressed(KeyCode::ArrowUp) || keys.pressed(KeyCode::KeyK) {
-        y += 1;
+        y += 1.0;
     }
     if keys.pressed(KeyCode::ArrowDown) || keys.pressed(KeyCode::KeyJ) {
-        y += -1;
+        y -= 1.0;
     }
     let Ok(mut transform) = q_camera_transform.single_mut() else {
         return;
     };
-    transform.translation += Vec3::new(x as f32, y as f32, 0.0);
 
     let (mut camera_proj, _) = match q_camera.single_mut() {
         Ok(data) => data,
@@ -491,6 +503,19 @@ fn keyboard_input_system(
     };
 
     // Simulation controls
+    let movement_speed = if let Projection::Orthographic(orthographic) = camera_proj.as_ref() {
+        let base_speed = if movement_config.turbo_mode { MAX_SPEED } else { BASE_SPEED };
+        let scale_factor = (orthographic.scale / DEFAULT_SCALE).clamp(0.1, 10.0);
+        base_speed * scale_factor * time.delta_secs()
+    } else {
+        30.0 * time.delta_secs()
+    };
+
+    if x != 0.0 || y != 0.0 {
+        let movement_vector = Vec3::new(x, y, 0.0).normalize_or_zero();
+        transform.translation += movement_vector * movement_speed;
+    }
+
     if keys.just_pressed(KeyCode::Space) {
         // Toggle play/pause
         cell_params.running = !cell_params.running;

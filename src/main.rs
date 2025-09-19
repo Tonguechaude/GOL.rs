@@ -12,6 +12,7 @@ use cellule::CellSystem;
 use gui::GuiSystem;
 use bevy::diagnostic::*;
 use info::FpsConfig;
+use gui::CameraMovementConfig;
 
 /// Entry point for the Conway's Game of Life application.
 ///
@@ -34,6 +35,7 @@ fn main() {
         .add_plugins(GuiSystem)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .init_resource::<FpsConfig>()
+        .init_resource::<CameraMovementConfig>()
         .add_systems(Update, info::toggle_fps_display)
         .run();
 }
