@@ -13,7 +13,6 @@ use gui::GuiSystem;
 use bevy::diagnostic::*;
 use info::FpsConfig;
 
-
 /// Entry point for the Conway's Game of Life application.
 ///
 /// Creates a Bevy app with:
@@ -34,7 +33,7 @@ fn main() {
         .add_plugins(CellSystem)
         .add_plugins(GuiSystem)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
-        .insert_resource(FpsConfig::default())
-        .add_systems(Update, info::print_fps_timed)
+        .init_resource::<FpsConfig>()
+        .add_systems(Update, info::toggle_fps_display)
         .run();
 }

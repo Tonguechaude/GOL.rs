@@ -1,33 +1,22 @@
 use bevy::prelude::*;
-use bevy::diagnostic::*;
-use std::time::Duration;
 
 #[derive(Resource)]
-pub struct FpsConfig(pub Timer, pub bool);
+pub struct FpsConfig {
+    pub visible: bool,
+}
 
-impl FpsConfig {
-    pub fn new(timer: Timer, show_detailed: bool) -> Self {
-        Self (timer, show_detailed)
-    }
-    
-    pub fn default() -> Self {
-        Self (Timer::new(Duration::from_secs(3), TimerMode::Repeating), false)
+impl Default for FpsConfig {
+    fn default() -> Self {
+        Self { visible: false }
     }
 }
 
-/// Version with timer, printing FPS every x secs
-pub fn print_fps_timed(
-    diagnostics: Res<DiagnosticsStore>,
-    mut timer: ResMut<FpsConfig>,
-    time: Res<Time>,
+// toggle fps display with F3
+pub fn toggle_fps_display(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut fps_config: ResMut<FpsConfig>,
 ) {
-    timer.0.tick(time.delta());
-    
-    if timer.0.just_finished() {
-        if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
-            if let Some(value) = fps.smoothed() {
-                println!("FPS: {:.2}", value);
-            }
-        }
+    if keyboard_input.just_pressed(KeyCode::F3) {
+        fps_config.visible = !fps_config.visible;
     }
 }

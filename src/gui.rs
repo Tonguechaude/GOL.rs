@@ -12,6 +12,7 @@ use bevy_egui::{
     egui::{self, Color32, Ui}, EguiContexts, EguiPlugin, EguiPrimaryContextPass
 };
 use bevy::render::camera::ScalingMode;
+use bevy::diagnostic::*;
 use rand::Rng;
 
 /// Type alias for time values in seconds
@@ -52,7 +53,7 @@ impl Plugin for GuiSystem {
             .add_systems(Update, draw_new_cells_system.before(CellSet))
             .add_systems(
                 EguiPrimaryContextPass, 
-                (gui_system, draw_grid_system).chain()
+                (gui_system, draw_grid_system, fps_display_system).chain()
             );
     }
 }
@@ -564,4 +565,44 @@ fn scale_to_slider(scale: f32) -> f32 {
 fn slider_to_scale(slider: f32) -> f32 {
     ((slider - 1.0) * (MAX_SCALE - DEFAULT_SCALE) / 99.0 + DEFAULT_SCALE)
         .clamp(DEFAULT_SCALE, MAX_SCALE)
+}
+
+/// System to print FPS in a egui window
+pub fn fps_display_system(
+    mut contexts: EguiContexts,
+    diagnostics: Res<DiagnosticsStore>,
+    fps_config: Res<crate::info::FpsConfig>,
+) {
+    if !fps_config.visible {
+        return;
+    }
+
+    let Ok(ctx) = contexts.ctx_mut() else {
+        return;
+    };
+
+    let fps_value = if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
+        if let Some(value) = fps.smoothed() {
+            format!("{:.2}", value)
+        } else {
+            "N/A".to_string()
+        }
+    } else {
+        "N/A".to_string()
+    };
+
+    egui::Window::new("FPS")
+        .resizable(false)
+        .collapsible(false)
+        .anchor(egui::Align2::RIGHT_TOP, egui::Vec2::new(-10.00, 10.0))
+        .show(ctx, |ui| {
+            ui.label(format!("FPS: {}", fps_value));
+
+            // Not primoridal
+            if let Some(frame_time) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FRAME_TIME) {
+                if let Some(value) = frame_time.smoothed() {
+                    ui.label(format!("Frame Time: {:.2}ms", value));
+                }
+            }
+        });
 }
