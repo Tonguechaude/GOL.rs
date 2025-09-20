@@ -5,10 +5,8 @@
 //! birth and death according to Conway's classic rules.
 
 use bevy::prelude::*;
-use std::{
-    collections::{HashMap, HashSet},
-    time::Duration,
-};
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::time::Duration;
 
 /// The eight neighboring positions relative to any cell.
 /// These offsets represent the Moore neighborhood (all adjacent cells).
@@ -23,7 +21,7 @@ pub struct CellSet;
 ///
 /// Uses signed integers to allow for negative coordinates,
 /// enabling an infinite grid that can expand in all directions.
-#[derive(Clone, Component, PartialEq, Eq, Debug, Hash)]
+#[derive(Clone, Copy, Component, PartialEq, Eq, Debug, Hash)]
 pub struct CellPosition {
     /// The x-coordinate of the cell
     pub x: isize,
@@ -128,21 +126,24 @@ pub fn cell_system(
         cell_params.calculate_next_gen = false;
     }
 
-    let mut neighbors: HashMap<CellPosition, usize> = HashMap::new();
-    let mut spawn_candidates: HashSet<CellPosition> = HashSet::new();
-    let mut cells_to_remove = Vec::new();
+    let cell_count = query.iter().count();
+    
+    // Opti: pre-allocation
+    let mut neighbors: FxHashMap<CellPosition, usize> = 
+        FxHashMap::with_capacity_and_hasher(cell_count * 9, Default::default());
+    let mut spawn_candidates: FxHashSet<CellPosition> = 
+        FxHashSet::with_capacity_and_hasher(cell_count * 2, Default::default());
+    let mut cells_to_remove = Vec::with_capacity(cell_count / 2);
 
     for (_, cell) in &query {
         for &(dx, dy) in &NEIGHBORS {
             let neighbor_pos = CellPosition { x: cell.x + dx, y: cell.y + dy };
-            let neighbor_count = neighbors.entry(neighbor_pos.clone()).or_insert(0);
+            let neighbor_count = neighbors.entry(neighbor_pos).or_insert(0);
             *neighbor_count += 1;
             if *neighbor_count == 3 {
                 spawn_candidates.insert(neighbor_pos);
             } else if *neighbor_count == 4 {
                 spawn_candidates.remove(&neighbor_pos);
-            } else {
-                // No action needed for other neighbor counts
             }
         }
     }
