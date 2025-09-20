@@ -9,7 +9,7 @@ use std::time::Duration;
 use crate::cellule::{CellParams, CellPosition, CellSet};
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::{
-    egui::{self, Color32, Ui}, EguiContexts, EguiPlugin, EguiPrimaryContextPass
+    egui::{self, Ui}, EguiContexts, EguiPlugin, EguiPrimaryContextPass
 };
 use bevy::render::camera::ScalingMode;
 use bevy::diagnostic::*;
@@ -55,8 +55,14 @@ impl Plugin for GuiSystem {
             .add_systems(Update, mouse_click_system)
             .add_systems(Update, draw_new_cells_system.before(CellSet))
             .add_systems(
+                Update,
+                draw_grid_system
+                    .after(draw_new_cells_system)
+                    .run_if(|gui_params: Res<GuiParams>| gui_params.grid_visible)
+            )
+            .add_systems(
                 EguiPrimaryContextPass, 
-                (gui_system, draw_grid_system, fps_display_system).chain()
+                (gui_system, fps_display_system).chain()
             );
     }
 }
@@ -305,97 +311,62 @@ fn gui_system(
     }
 }
 
+/// Renders the grid overlay using Bevy's Gizmos system.
+/// 
+/// This system draws grid lines only for the visible area of the world,
+/// creating an infinite grid effect that follows the camera.
 fn draw_grid_system(
-    mut contexts: EguiContexts,
-    gui_params: Res<GuiParams>,
-    q_camera: Query<(&Camera, &Projection, &GlobalTransform)>,
+    mut gizmos: Gizmos,
+    q_camera: Query<(&Camera, &GlobalTransform)>,
 ) {
-    if !gui_params.grid_visible {
+    let Ok((camera, camera_transform)) = q_camera.single() else {
         return;
+    };
+    
+    // Calculate visible bounds
+    let Some(viewport_size) = camera.logical_viewport_size() else {
+        return;
+    };
+    
+    let Ok(ray_top_left) = camera.viewport_to_world(camera_transform, Vec2::ZERO) else {
+        return;
+    };
+    
+    let Ok(ray_bottom_right) = camera.viewport_to_world(
+        camera_transform,
+        Vec2::new(viewport_size.x, viewport_size.y)
+    ) else {
+        return;
+    };
+    
+    let top_left = ray_top_left.origin.truncate();
+    let bottom_right = ray_bottom_right.origin.truncate();
+    
+    // Round to cell boundaries with some padding
+    let x_min = (top_left.x - 1.0).floor() as i32;
+    let x_max = (bottom_right.x + 1.0).ceil() as i32;
+    let y_min = (bottom_right.y - 1.0).floor() as i32;
+    let y_max = (top_left.y + 1.0).ceil() as i32;
+    
+    let color = Color::srgb(0.3, 0.3, 0.3); // Gris sans transparence
+    
+    // Draw vertical lines
+    for x in x_min..=x_max {
+        gizmos.line_2d(
+            Vec2::new(x as f32 - 0.5, y_min as f32 - 0.5),
+            Vec2::new(x as f32 - 0.5, y_max as f32 + 0.5),
+            color
+        );
     }
     
-    const LINE_COLOR: Color32 = Color32::BLACK;
-    let (camera, camera_projection, camera_transform) = match q_camera.single() {
-        Ok(data) => data,
-        Err(_) => return,
-    };
-
-    let camera_scale = match camera_projection {
-        Projection::Orthographic(orthographic) => orthographic.scale,
-        _ => return,
-    };
-
-    let Ok(ctx) = contexts.ctx_mut() else {
-        return;
-    };
-    
-    let transparent_frame =
-        egui::containers::Frame { fill: Color32::TRANSPARENT, ..Default::default() };
-    let line_width = (1.0 - (camera_scale - DEFAULT_SCALE) / (MAX_SCALE - DEFAULT_SCALE)).powi(10);
-
-    egui::CentralPanel::default().frame(transparent_frame).show(ctx, |ui| {
-        let (response, painter) = ui.allocate_painter(
-            bevy_egui::egui::Vec2::new(ui.available_width(), ui.available_height()),
-            egui::Sense::hover()
+    // Draw horizontal lines
+    for y in y_min..=y_max {
+        gizmos.line_2d(
+            Vec2::new(x_min as f32 - 0.5, y as f32 - 0.5),
+            Vec2::new(x_max as f32 + 0.5, y as f32 - 0.5),
+            color
         );
-        let Ok(ray_top_left) = camera.viewport_to_world(camera_transform, Vec2 { x: 0.0, y: 0.0 })
-        else {
-            return;
-        };
-        let visible_top_left = ray_top_left.origin.truncate();
-        let (x_min, y_max) =
-            (visible_top_left.x.round() as isize, visible_top_left.y.round() as isize);
-        let Ok(ray_bottom_right) = camera.viewport_to_world(
-            camera_transform,
-            Vec2 { x: response.rect.right(), y: response.rect.bottom() },
-        ) else {
-            return;
-        };
-        let visible_bottom_right = ray_bottom_right.origin.truncate();
-        let (x_max, y_min) =
-            (visible_bottom_right.x.round() as isize, visible_bottom_right.y.round() as isize);
-        
-        for x in x_min..=x_max {
-            let Ok(start) = camera.world_to_viewport(
-                camera_transform,
-                Vec3 { x: x as f32 - 0.5, y: y_min as f32 - 0.5, z: 0.0 },
-            ) else {
-                continue;
-            };
-            let start_pos = egui::Pos2::new(start.x, start.y);
-            let Ok(end) = camera.world_to_viewport(
-                camera_transform,
-                Vec3 { x: x as f32 - 0.5, y: y_max as f32 + 0.5, z: 0.0 },
-            ) else {
-                continue;
-            };
-            let end_pos = egui::Pos2::new(end.x, end.y);   
-            painter.add(egui::Shape::LineSegment {
-                points: [start_pos, end_pos],
-                stroke: egui::Stroke { width: line_width, color: LINE_COLOR }.into(),
-            });
-        }
-        for y in y_min..=y_max {
-            let Ok(start) = camera.world_to_viewport(
-                camera_transform,
-                Vec3 { x: x_min as f32 - 0.5, y: y as f32 - 0.5, z: 0.0 },
-            ) else {
-                continue;
-            };
-            let start_pos = egui::Pos2::new(start.x, start.y);
-            let Ok(end) = camera.world_to_viewport(
-                camera_transform,
-                Vec3 { x: x_max as f32 + 0.5, y: y as f32 - 0.5, z: 0.0 },
-            ) else {
-                continue;
-            };
-            let end_pos = egui::Pos2::new(end.x, end.y);
-            painter.add(egui::Shape::LineSegment {
-                points: [start_pos, end_pos],
-                stroke: egui::Stroke { width: line_width, color: LINE_COLOR }.into(),
-            });
-        }
-    });
+    }
 }
 
 /// System that adds visual components to newly spawned cells.
