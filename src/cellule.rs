@@ -18,6 +18,7 @@ static NEIGHBORS: [(isize, isize); 8] =
 pub struct CellSet;
 
 /// Represents the position of a cell in the Game of Life grid.
+/// 
 ///
 /// Uses signed integers to allow for negative coordinates,
 /// enabling an infinite grid that can expand in all directions.
@@ -27,6 +28,16 @@ pub struct CellPosition {
     pub x: isize,
     /// The y-coordinate of the cell
     pub y: isize,
+}
+
+/// Marker component for cells that are currently alive
+#[derive(Component)]
+pub struct Alive;
+
+/// Pool of dead cell entities ready for reuse
+#[derive(Resource, Default)]
+pub struct DeadCellPool {
+    pub entities: Vec<Entity>,
 }
 
 /// Configuration parameters for the Game of Life simulation.
@@ -45,12 +56,16 @@ pub struct CellParams {
 
 impl Default for CellParams {
     fn default() -> Self {
-        Self { running: true, period: Duration::from_secs(1), calculate_next_gen: false }
+        Self { 
+            running: true, 
+            period: Duration::from_secs(1), 
+            calculate_next_gen: false 
+        }
     }
 }
 
 /// Timer resource that controls when to calculate the next generation.
-///
+/// 
 /// Wraps a Bevy Timer to track when enough time has passed
 /// for the next generation update.
 #[derive(Resource)]
@@ -68,6 +83,7 @@ impl Plugin for CellSystem {
         let period = cell_params.period;
         app.insert_resource(cell_params)
             .insert_resource(NewGenTimer(Timer::new(period, TimerMode::Repeating)))
+            .insert_resource(DeadCellPool::default())
             .add_systems(Update, cell_params_listener)
             .add_systems(Startup, setup_cells.in_set(CellSet))
             .add_systems(Update, cell_system.in_set(CellSet));
@@ -80,7 +96,10 @@ impl Plugin for CellSystem {
 /// This creates a small glider pattern that will move across the grid.
 pub fn setup_cells(mut commands: Commands) {
     for &(x, y) in &[(0, 0), (-1, 0), (0, -1), (0, 1), (1, 1)] {
-        commands.spawn(CellPosition { x, y });
+        commands.spawn((
+            CellPosition { x, y },
+            Alive,
+        ));
     }
 }
 
@@ -100,17 +119,14 @@ pub fn cell_params_listener(my_res: Res<CellParams>, mut timer: ResMut<NewGenTim
 
 /// Main system that implements Conway's Game of Life rules.
 ///
-/// This system runs every frame and:
-/// 1. Checks if it's time to calculate the next generation
-/// 2. Counts neighbors for each cell and potential cell position
-/// 3. Applies Conway's rules:
-///    - Live cells with 2-3 neighbors survive
-///    - Dead cells with exactly 3 neighbors become alive
-///    - All other cells die or stay dead
-/// 4. Spawns new cells and despawns dead ones
+/// Applies Conway's rules:
+///  - Live cells with 2-3 neighbors survive
+///  - Dead cells with exactly 3 neighbors become alive
+///  - All other cells die or stay dead
 pub fn cell_system(
     mut commands: Commands,
-    query: Query<(Entity, &CellPosition)>,
+    alive_query: Query<(Entity, &CellPosition), With<Alive>>,
+    mut dead_pool: ResMut<DeadCellPool>,
     mut timer: ResMut<NewGenTimer>,
     mut cell_params: ResMut<CellParams>,
     time: Res<Time>,
@@ -126,44 +142,61 @@ pub fn cell_system(
         cell_params.calculate_next_gen = false;
     }
 
-    let cell_count = query.iter().count();
+    let cell_count = alive_query.iter().count();
     
-    // Opti: pre-allocation
+    // Pre-allocation
     let mut neighbors: FxHashMap<CellPosition, usize> = 
         FxHashMap::with_capacity_and_hasher(cell_count * 9, Default::default());
-    let mut spawn_candidates: FxHashSet<CellPosition> = 
-        FxHashSet::with_capacity_and_hasher(cell_count * 2, Default::default());
-    let mut cells_to_remove = Vec::with_capacity(cell_count / 2);
+    let mut cells_to_kill = Vec::with_capacity(cell_count / 2);
 
-    for (_, cell) in &query {
+    let mut alive_positions: FxHashSet<CellPosition> = 
+        FxHashSet::with_capacity_and_hasher(cell_count, Default::default());
+    
+    for (_, pos) in &alive_query {
+        alive_positions.insert(*pos);
+    }
+
+    for (_, cell) in &alive_query {
         for &(dx, dy) in &NEIGHBORS {
             let neighbor_pos = CellPosition { x: cell.x + dx, y: cell.y + dy };
-            let neighbor_count = neighbors.entry(neighbor_pos).or_insert(0);
-            *neighbor_count += 1;
-            if *neighbor_count == 3 {
-                spawn_candidates.insert(neighbor_pos);
-            } else if *neighbor_count == 4 {
-                spawn_candidates.remove(&neighbor_pos);
-            }
+            *neighbors.entry(neighbor_pos).or_insert(0) += 1;
         }
     }
 
-    for (entity, cell) in &query {
+    for (entity, cell) in &alive_query {
         match neighbors.get(cell).copied().unwrap_or(0) {
-            0 | 1 => cells_to_remove.push(entity),
-            2 => (),
-            3 => {
-                spawn_candidates.remove(cell);
-            }
-            _ => cells_to_remove.push(entity),
+            2 | 3 => (),
+            _ => cells_to_kill.push(entity),
         }
     }
 
-    for entity in cells_to_remove {
-        commands.entity(entity).despawn();
+    let mut cells_to_spawn = Vec::new();
+    for (pos, count) in &neighbors {
+        if *count == 3 && !alive_positions.contains(pos) {
+            cells_to_spawn.push(*pos);
+        }
     }
 
-    for new_cell in spawn_candidates {
-        commands.spawn(new_cell);
+    for entity in cells_to_kill {
+        commands.entity(entity)
+            .remove::<Alive>()
+            .insert(Visibility::Hidden);
+        dead_pool.entities.push(entity);
+    }
+
+    for new_pos in cells_to_spawn {
+        if let Some(entity) = dead_pool.entities.pop() {
+            commands.entity(entity)
+                .insert(Alive)
+                .insert(Visibility::Visible)
+                .insert(Transform::from_xyz(new_pos.x as f32, new_pos.y as f32, 0.0))
+                .insert(new_pos);
+        } else {
+            commands.spawn((
+                new_pos,
+                Alive,
+                Visibility::Visible,
+            ));
+        }
     }
 }

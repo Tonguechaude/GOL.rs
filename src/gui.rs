@@ -6,7 +6,7 @@
 
 use std::time::Duration;
 
-use crate::cellule::{CellParams, CellPosition, CellSet};
+use crate::cellule::{Alive, CellParams, CellPosition, CellSet, DeadCellPool};
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::{
     egui::{self, Color32, Ui}, EguiContexts, EguiPlugin, EguiPrimaryContextPass
@@ -122,7 +122,8 @@ fn gui_system(
     mut cell_params: ResMut<CellParams>,
     mut gui_params: ResMut<GuiParams>,
     mut q_camera: Query<(&mut Projection, &GlobalTransform)>,
-    q_cells: Query<Entity, With<CellPosition>>,
+    q_cells: Query<Entity, With<Alive>>,
+    mut dead_pool: ResMut<DeadCellPool>,
     mut modal_state: Local<ModalState>,
 ) {
     let Ok(ctx) = contexts.ctx_mut() else {
@@ -236,7 +237,7 @@ fn gui_system(
                             .fill(egui::Color32::from_rgb(180, 50, 50));
                         if ui.add(delete_btn).clicked() {
                             cell_params.running = false;
-                            clear_cells(&mut commands, &q_cells);
+                            clear_cells(&mut commands, &q_cells, &mut dead_pool);
                             modal_state.show_reset = false;
                         }
                     });
@@ -284,7 +285,7 @@ fn gui_system(
                         if ui.add(generate_btn).clicked() {
                             let offset = -(gui_params.random_grid_width as isize) / 2;
                             let width = gui_params.random_grid_width as usize;
-                            clear_cells(&mut commands, &q_cells);
+                            clear_cells(&mut commands, &q_cells, &mut dead_pool);
                             generate_random_cells(&mut commands, offset, offset, width, width);
                             modal_state.show_random = false;
                         }
@@ -401,19 +402,19 @@ fn draw_grid_system(
 /// System that adds visual components to newly spawned cells.
 ///
 /// This system runs when cells are first created and adds the necessary
-/// Sprite and Transform components to make them visible on screen.
+/// Components to make them visible on screen.
 fn draw_new_cells_system(
     mut commands: Commands,
-    query: Query<(Entity, &CellPosition), Added<CellPosition>>,
+    query: Query<(Entity, &CellPosition), (Added<CellPosition>, With<Alive>)>,
 ) {
     for (entity, pos) in query.iter() {
-        commands.entity(entity).insert(Sprite {
-            color: CELL_COLOR,
-            custom_size: Some(Vec2::new(1.0, 1.0)),
-            ..Default::default()
-        });
-
-        commands.entity(entity).insert(Transform::from_xyz(pos.x as f32, pos.y as f32, 0.0));
+        commands.entity(entity)
+            .insert(Sprite {
+                color: CELL_COLOR,
+                custom_size: Some(Vec2::new(1.0, 1.0)),
+                ..Default::default()
+            })
+            .insert(Transform::from_xyz(pos.x as f32, pos.y as f32, 0.0));
     }
 }
 
@@ -422,12 +423,15 @@ fn draw_new_cells_system(
 /// When the simulation is paused and the user clicks on the grid,
 /// this system will either create a new cell or remove an existing one
 /// at the clicked position.
+/// Handles mouse clicks to toggle cells on/off.
 fn mouse_click_system(
     mut commands: Commands,
     cell_params: Res<CellParams>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform)>,
-    q_cellpos: Query<(Entity, &CellPosition)>,
+    q_alive_cells: Query<(Entity, &CellPosition), With<Alive>>,
+    q_dead_cells: Query<(Entity, &CellPosition), Without<Alive>>,
+    mut dead_pool: ResMut<DeadCellPool>,
     buttons: Res<ButtonInput<MouseButton>>,
 ) {
     if cell_params.running || !buttons.just_released(MouseButton::Left) {
@@ -448,15 +452,55 @@ fn mouse_click_system(
     };
     let position_cible = ray.origin.truncate().round();
 
-    dbg!("Click position: {position_cible}");
     let new_cell = CellPosition { x: position_cible.x as isize, y: position_cible.y as isize };
-    for (entity, cell_position) in q_cellpos.iter() {
+    
+    // Check if there's a living cell at this position
+    for (entity, cell_position) in q_alive_cells.iter() {
         if cell_position == &new_cell {
-            commands.entity(entity).despawn();
+            // Kill the cell (put in pool)
+            commands.entity(entity)
+                .remove::<Alive>()
+                .insert(Visibility::Hidden);
+            dead_pool.entities.push(entity);
             return;
         }
     }
-    commands.spawn(new_cell);
+    
+    // Check if there's a dead cell at this position to revive
+    for (entity, cell_position) in q_dead_cells.iter() {
+        if cell_position == &new_cell {
+            // Revive the cell
+            commands.entity(entity)
+                .insert(Alive)
+                .insert(Visibility::Visible);
+            // Remove from pool if it's there
+            if let Some(index) = dead_pool.entities.iter().position(|&e| e == entity) {
+                dead_pool.entities.swap_remove(index);
+            }
+            return;
+        }
+    }
+    
+    // No existing cell, try to reuse from pool or create new
+    if let Some(entity) = dead_pool.entities.pop() {
+        commands.entity(entity)
+            .insert(new_cell)
+            .insert(Alive)
+            .insert(Visibility::Visible)
+            .insert(Transform::from_xyz(new_cell.x as f32, new_cell.y as f32, 0.0));
+    } else {
+        commands.spawn((
+            new_cell,
+            Alive,
+            Sprite {
+                color: CELL_COLOR,
+                custom_size: Some(Vec2::new(1.0, 1.0)),
+                ..Default::default()
+            },
+            Transform::from_xyz(new_cell.x as f32, new_cell.y as f32, 0.0),
+            Visibility::Visible,
+        ));
+    }
 }
 
 /// Handles keyboard input for camera movement and simulation controls.
@@ -473,7 +517,8 @@ fn keyboard_input_system_config(
     mut cell_params: ResMut<CellParams>,
     mut q_camera_transform: Query<&mut Transform, With<Camera>>,
     mut q_camera: Query<(&mut Projection, &GlobalTransform)>,
-    q_cells: Query<Entity, With<CellPosition>>,
+    q_cells: Query<Entity, With<Alive>>,
+    mut dead_pool: ResMut<DeadCellPool>,
     time: Res<Time>,
     mut movement_config: ResMut<CameraMovementConfig>,
 ) {
@@ -523,7 +568,7 @@ fn keyboard_input_system_config(
     if keys.just_pressed(KeyCode::KeyR) {
         // Reset/clear grid
         cell_params.running = false;
-        clear_cells(&mut commands, &q_cells);
+        clear_cells(&mut commands, &q_cells, &mut dead_pool);
     }
     if keys.just_pressed(KeyCode::KeyN) && !cell_params.running {
         // Next generation (only when paused)
@@ -547,10 +592,16 @@ fn keyboard_input_system_config(
 ///
 /// Used by the "clear grid" functionality to reset the simulation
 /// to an empty state.
-fn clear_cells(commands: &mut Commands, q_cells: &Query<Entity, With<CellPosition>>) {
-    let cells_to_remove: Vec<Entity> = q_cells.iter().collect();
-    for entity in cells_to_remove {
-        commands.entity(entity).despawn();
+fn clear_cells(
+    commands: &mut Commands, 
+    q_cells: &Query<Entity, With<Alive>>,
+    dead_pool: &mut ResMut<DeadCellPool>
+) {
+    for entity in q_cells.iter() {
+        commands.entity(entity)
+            .remove::<Alive>()
+            .insert(Visibility::Hidden);
+        dead_pool.entities.push(entity);
     }
 }
 
@@ -569,7 +620,16 @@ fn generate_random_cells(commands: &mut Commands, x: isize, y: isize, width: usi
     for coord_x in x..(x + width as isize) {
         for coord_y in y..(y + height as isize) {
             if rng.random::<bool>() {
-                commands.spawn(CellPosition { x: coord_x, y: coord_y });
+                commands.spawn((
+                    CellPosition { x: coord_x, y: coord_y },
+                    Alive,
+                    Sprite {
+                        color: CELL_COLOR,
+                        custom_size: Some(Vec2::new(1.0, 1.0)),
+                        ..Default::default()
+                    },
+                    Transform::from_xyz(coord_x as f32, coord_y as f32, 0.0),
+                ));
             }
         }
     }
