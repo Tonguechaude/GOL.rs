@@ -7,12 +7,19 @@ use bevy::window::PrimaryWindow;
 use crate::config::{SimulationConfig, CameraConfig, DEFAULT_SCALE, BASE_SPEED, MAX_SPEED, ZOOM_STEP};
 use crate::simulation::{CellPosition, Alive, DeadCellPool};
 
+/// Resource to track the last painted position during drag operations
+#[derive(Resource, Default)]
+pub struct LastPaintedPosition {
+    pub position: Option<CellPosition>,
+}
+
 /// Plugin for input handling systems
 pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (keyboard_input_system, mouse_click_system));
+        app.init_resource::<LastPaintedPosition>()
+            .add_systems(Update, (keyboard_input_system, mouse_click_system, reset_paint_position));
     }
 }
 
@@ -92,7 +99,7 @@ pub fn keyboard_input_system(
     }
 }
 
-/// Handles mouse clicks to toggle cells on/off
+/// Handles mouse clicks and drag to paint/erase cells
 pub fn mouse_click_system(
     mut commands: Commands,
     simulation_config: Res<SimulationConfig>,
@@ -102,8 +109,14 @@ pub fn mouse_click_system(
     q_dead_cells: Query<(Entity, &CellPosition), Without<Alive>>,
     mut dead_pool: ResMut<DeadCellPool>,
     buttons: Res<ButtonInput<MouseButton>>,
+    mut last_painted: ResMut<LastPaintedPosition>,
 ) {
-    if simulation_config.running || !buttons.just_released(MouseButton::Left) {
+    if simulation_config.running {
+        return;
+    }
+    
+    // Handle both click and drag (pressed instead of just_released)
+    if !buttons.pressed(MouseButton::Left) {
         return;
     }
     
@@ -125,6 +138,16 @@ pub fn mouse_click_system(
         x: position_cible.x as isize, 
         y: position_cible.y as isize 
     };
+    
+    // Skip if we already painted this position during the current drag
+    if let Some(last_pos) = last_painted.position {
+        if last_pos == new_cell {
+            return;
+        }
+    }
+    
+    // Update the last painted position
+    last_painted.position = Some(new_cell);
     
     // Check if there's a living cell at this position
     for (entity, cell_position) in q_alive_cells.iter() {
@@ -169,6 +192,16 @@ pub fn mouse_click_system(
             Transform::from_xyz(new_cell.x as f32, new_cell.y as f32, 0.0),
             Visibility::Visible,
         ));
+    }
+}
+
+/// Reset the last painted position when mouse button is released
+pub fn reset_paint_position(
+    buttons: Res<ButtonInput<MouseButton>>,
+    mut last_painted: ResMut<LastPaintedPosition>,
+) {
+    if buttons.just_released(MouseButton::Left) {
+        last_painted.position = None;
     }
 }
 
