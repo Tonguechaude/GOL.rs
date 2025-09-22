@@ -6,6 +6,7 @@ use bevy::prelude::*;
 use bevy_egui::{EguiContexts, egui};
 use bevy::diagnostic::*;
 use crate::config::FpsConfig;
+use crate::simulation::cell::{Alive, CellPosition};
 
 /// Plugin for diagnostic systems
 pub struct DiagnosticsPlugin;
@@ -29,11 +30,12 @@ pub fn toggle_fps_display(
     }
 }
 
-/// System to display FPS in an egui window
+/// System to display FPS and live cell count in an egui window
 pub fn fps_display_system(
     mut contexts: EguiContexts,
     diagnostics: Res<DiagnosticsStore>,
     fps_config: Res<FpsConfig>,
+    alive_cells_query: Query<&CellPosition, With<Alive>>,
 ) {
     if !fps_config.visible {
         return;
@@ -53,12 +55,15 @@ pub fn fps_display_system(
         "N/A".to_string()
     };
 
-    egui::Window::new("FPS")
+    let alive_count = alive_cells_query.iter().count();
+
+    egui::Window::new("Diagnostics")
         .resizable(false)
         .collapsible(false)
         .anchor(egui::Align2::RIGHT_TOP, egui::Vec2::new(-10.00, 10.0))
         .show(ctx, |ui| {
             ui.label(format!("FPS: {}", fps_value));
+            ui.label(format!("Cellules vivantes: {}", alive_count));
 
             // if let Some(frame_time) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FRAME_TIME) {
             //     if let Some(value) = frame_time.smoothed() {
