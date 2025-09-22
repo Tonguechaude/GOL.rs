@@ -10,15 +10,19 @@
 //! - Interactive GUI controls
 //! - Configurable simulation speed
 //! - Step-by-step mode for debugging
+//! - Modular architecture for easy maintenance
 //!
-//! ## Usage
+//! ## Architecture
 //!
-//! ```no_run
-//! use jeu_de_la_vie::cellule::CellPosition;
-//!
-//! let cell = CellPosition { x: 0, y: 0 };
-//! ```
+//! The crate is organized into several modules:
+//! - `simulation`: Core simulation logic and cell management
+//! - `rendering`: Visual rendering of cells and grid
+//! - `ui`: User interface and interaction handling
+//! - `config`: Configuration parameters and constants
+//! - `utils`: Utility functions and diagnostic tools
 
-pub mod cellule;
-pub mod gui;
-pub mod info;
+pub mod simulation;
+pub mod rendering;
+pub mod ui;
+pub mod config;
+pub mod utils;
