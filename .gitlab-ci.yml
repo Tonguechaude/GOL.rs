@@ -23,6 +23,8 @@ rust_build:
     expire_in: '3 months'
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
+  tags:
+    - raspberry
 
 # Publish tagged releases
 release-publish-tag:

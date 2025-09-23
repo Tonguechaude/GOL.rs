@@ -5,6 +5,7 @@
 
 pub mod cell;
 pub mod rules;
+pub mod pattern;
 pub mod generation;
 
 pub use cell::*;

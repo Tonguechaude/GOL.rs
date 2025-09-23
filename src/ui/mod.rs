@@ -6,11 +6,13 @@ pub mod controls;
 pub mod modals;
 pub mod camera;
 pub mod input;
+pub mod pattern;
 
 pub use controls::*;
 pub use modals::*;
 pub use camera::*;
 pub use input::*;
+pub use pattern::*;
 
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;

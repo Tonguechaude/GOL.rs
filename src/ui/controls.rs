@@ -8,6 +8,7 @@ use bevy_egui::{EguiContexts, egui};
 use crate::config::{SimulationConfig, DisplayConfig};
 use crate::simulation::{Alive, DeadCellPool};
 use crate::utils::{period_to_slider, slider_to_period, scale_to_slider, slider_to_scale};
+use crate::ui::pattern::{pattern_system, rle_loader_modal, PlacementMode, RleLoader};
 
 /// Plugin for control panel systems
 pub struct ControlsPlugin;
@@ -27,6 +28,8 @@ pub fn control_panel_system(
     mut q_camera: Query<(&mut Projection, &GlobalTransform)>,
     q_cells: Query<Entity, With<Alive>>,
     mut dead_pool: ResMut<DeadCellPool>,
+    mut placement_mode: ResMut<PlacementMode>,
+    mut rle_loader: ResMut<RleLoader>,
 ) {
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
@@ -99,6 +102,9 @@ pub fn control_panel_system(
         ui.vertical(|ui| {
             ui.checkbox(&mut display_config.grid_visible, "Show Grid");
         });
+
+        // Add pattern section
+        pattern_system(ui, &mut placement_mode, &mut simulation_config, &mut rle_loader);
         
         separator(ui);
         ui.vertical(|ui| {
@@ -122,6 +128,9 @@ pub fn control_panel_system(
     if speed_slider_init != speed_slider {
         simulation_config.period = Duration::from_secs_f32(slider_to_period(speed_slider));
     }
+
+    // Handle RLE loader modal
+    rle_loader_modal(ctx, &mut rle_loader, &mut placement_mode, &mut simulation_config);
 }
 
 /// Removes all living cells from the simulation

@@ -5,7 +5,8 @@
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use crate::config::{SimulationConfig, CameraConfig, DEFAULT_SCALE, BASE_SPEED, MAX_SPEED, ZOOM_STEP};
-use crate::simulation::{CellPosition, Alive, DeadCellPool};
+use crate::simulation::{pattern::Patterns, CellPosition, Alive, DeadCellPool};
+use crate::ui::pattern::{PlacementMode, RleLoader};
 
 /// Resource to track the last painted position during drag operations
 #[derive(Resource, Default)]
@@ -18,7 +19,9 @@ pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<LastPaintedPosition>()
+        app.init_resource::<LastPaintedPosition>()  
+            .init_resource::<PlacementMode>()
+            .init_resource::<RleLoader>()
             .add_systems(Update, (keyboard_input_system, mouse_click_system, reset_paint_position));
     }
 }
@@ -110,13 +113,20 @@ pub fn mouse_click_system(
     mut dead_pool: ResMut<DeadCellPool>,
     buttons: Res<ButtonInput<MouseButton>>,
     mut last_painted: ResMut<LastPaintedPosition>,
+    mut placement_mode: ResMut<PlacementMode>,
+    rle_loader: Res<RleLoader>,
+    mut egui_contexts: bevy_egui::EguiContexts,
 ) {
     if simulation_config.running {
         return;
     }
     
-    // Handle both click and drag (pressed instead of just_released)
-    if !buttons.pressed(MouseButton::Left) {
+    // Check if mouse is over egui interface - if so, don't handle drawing
+    let Ok(egui_ctx) = egui_contexts.ctx_mut() else {
+        return;
+    };
+    // only block if we're interacting with UI elements (LOSER !!)
+    if egui_ctx.wants_pointer_input() || egui_ctx.is_using_pointer() {
         return;
     }
     
@@ -138,6 +148,39 @@ pub fn mouse_click_system(
         x: position_cible.x as isize, 
         y: position_cible.y as isize 
     };
+
+    // Check pattern placement mode FIRST (highest priority)
+    if placement_mode.active {
+        if let Some(pattern_name) = &placement_mode.pattern_name {
+            if buttons.just_released(MouseButton::Left) {
+                let cells: &[(i32, i32)] = match pattern_name.as_str() {
+                    "pulsar" => Patterns::demo(),
+                    "pufferfish" => Patterns::pufferfish(),
+                    "traffic-jam" => Patterns::traffic_jam(),
+                    "custom_rle" => {
+                        // Parse the custom RLE and convert to static reference
+                        let parsed_cells = Patterns::from_rle_string(&rle_loader.rle_content);
+                        // For now, we'll need a different approach since we can't return a temporary reference
+                        place_pattern_from_vec(&mut commands, &position_cible, &parsed_cells, &mut dead_pool);
+                        placement_mode.active = false;
+                        placement_mode.pattern_name = None;
+                        return;
+                    },
+                    _ => return,
+                };
+                
+                place_pattern(&mut commands, &position_cible, cells, &mut dead_pool);
+                placement_mode.active = false;
+                placement_mode.pattern_name = None;
+            }
+        }
+        return; // Don't allow drawing when in placement mode
+    }
+
+    // Handle both click and drag (pressed instead of just_released)
+    if !buttons.pressed(MouseButton::Left) {
+        return;
+    }
     
     // Skip if we already painted this position during the current drag
     if let Some(last_pos) = last_painted.position {
@@ -216,5 +259,64 @@ fn clear_cells(
             .remove::<Alive>()
             .insert(Visibility::Hidden);
         dead_pool.entities.push(entity);
+    }
+}
+
+
+fn place_pattern(
+    commands: &mut Commands,
+    position: &Vec2,
+    cells: &[(i32, i32)],
+    dead_pool: &mut ResMut<DeadCellPool>,
+) {
+    for (dx, dy) in cells {
+        let pos = CellPosition {
+            x: position.x as isize + *dx as isize,
+            y: position.y as isize + *dy as isize,
+        };
+        
+        if let Some(entity) = dead_pool.entities.pop() {
+            commands.entity(entity)
+                .insert(pos)
+                .insert(Alive)
+                .insert(Visibility::Visible)
+                .insert(Transform::from_xyz(pos.x as f32, pos.y as f32, 0.0));
+        } else {
+            commands.spawn((pos, Alive));
+        }
+    }
+}
+
+fn place_pattern_from_vec(
+    commands: &mut Commands,
+    position: &Vec2,
+    cells: &Vec<(i32, i32)>,
+    dead_pool: &mut ResMut<DeadCellPool>,
+) {
+    for (dx, dy) in cells {
+        let pos = CellPosition {
+            x: position.x as isize + *dx as isize,
+            y: position.y as isize + *dy as isize,
+        };
+        
+        if let Some(entity) = dead_pool.entities.pop() {
+            commands.entity(entity)
+                .insert(pos)
+                .insert(Alive)
+                .insert(Visibility::Visible)
+                .insert(Transform::from_xyz(pos.x as f32, pos.y as f32, 0.0));
+        } else {
+            commands.spawn((
+                pos,
+                Alive,
+                Sprite {
+                    color: crate::config::CELL_COLOR,
+                    custom_size: Some(Vec2::new(1.0, 1.0)),
+                    ..Default::default()
+                },
+                Transform::from_xyz(pos.x as f32, pos.y as f32, 0.0),
+                Visibility::Visible,
+            ));
+        }
     }
 }

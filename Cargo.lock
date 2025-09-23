@@ -2488,6 +2488,7 @@ dependencies = [
  "bevy",
  "bevy_egui",
  "getrandom 0.3.3",
+ "parse_rle_macro",
  "rand 0.9.2",
  "rustc-hash 2.1.1",
 ]
@@ -3217,6 +3218,10 @@ dependencies = [
  "smallvec",
  "windows-targets 0.52.6",
 ]
+
+[[package]]
+name = "parse_rle_macro"
+version = "0.1.0"
 
 [[package]]
 name = "paste"
