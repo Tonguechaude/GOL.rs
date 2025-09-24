@@ -1,3 +1,4 @@
+---
 stages:
   - build
   - release
@@ -9,13 +10,7 @@ variables:
 # Build the gol application
 rust_build:
   stage: build
-  image: rust:latest
-  before_script:
-    - rustup toolchain install nightly --allow-downgrade
-    - rustup default nightly
-    - rustup target add ${WASM_TARGET}
-    - cargo install -f wasm-bindgen-cli --version 0.2.101
-    - cargo install wasm-server-runner
+  image: tonguechaude/rust-wasm-builder:latest
   script:
     - cargo build-wasm
     - wasm-bindgen --no-typescript --out-dir ./webapp/ --target web ./target/${WASM_TARGET}/release/jeu_de_la_vie.wasm
@@ -38,3 +33,6 @@ release-publish-tag:
     - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file gol.tar.gz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${BUILD_NAME}/${CI_COMMIT_TAG}/gol-${CI_COMMIT_TAG}.tar.gz"'
   only:
     - tags
+
+...
+

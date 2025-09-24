@@ -96,6 +96,12 @@ Ce projet utilise les dépendances suivantes :
 **getrandom** : génération de nombre aléatoir compatible avbec la cible wasm32
 **wasm-bindgen** : Pour la compatibilité WebAssembly.  
     
+## Docker
+
+Actually I exposed a docker image here : [tonguechaude/rust-wasm-builder](https://hub.docker.com/r/tonguechaude/rust-wasm-builder)
+
+This image exist just because my runner CPU is so bad :(, so I need to optimize compute time in CI.
+
 ## Contribuer
     
 Les contributions sont les bienvenues ! Si vous souhaitez améliorer ce projet, voici comment procéder :
