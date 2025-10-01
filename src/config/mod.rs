@@ -5,10 +5,12 @@
 pub mod simulation;
 pub mod display;
 pub mod constants;
+pub mod color;
 
 pub use simulation::*;
 pub use display::*;
 pub use constants::*;
+pub use color::*;
 
 use bevy::prelude::*;
 
@@ -22,3 +24,4 @@ impl Plugin for ConfigPlugin {
             .init_resource::<CameraConfig>();
     }
 }
+

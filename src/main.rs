@@ -8,7 +8,7 @@ use jeu_de_la_vie::{
     simulation::SimulationPlugin,
     rendering::RenderingPlugin,
     ui::UiPlugin,
-    config::ConfigPlugin,
+    config::{ConfigPlugin, ColorPlugin},
     utils::UtilsPlugin,
 };
 
@@ -28,6 +28,7 @@ fn main() {
             ..Default::default()
         }))
         .add_plugins(ConfigPlugin)
+        .add_plugins(ColorPlugin)
         .add_plugins(SimulationPlugin)
         .add_plugins(RenderingPlugin)
         .add_plugins(UiPlugin)

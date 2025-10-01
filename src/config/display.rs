@@ -18,9 +18,9 @@ pub struct DisplayConfig {
 
 impl Default for DisplayConfig {
     fn default() -> Self {
-        Self { 
-            random_grid_width: 50u16, 
-            grid_visible: true 
+        Self {
+            random_grid_width: 50u16,
+            grid_visible: true
         }
     }
 }
@@ -44,3 +44,22 @@ impl Default for FpsConfig {
         Self { visible: false }
     }
 }
+
+/// Config for colors in game
+#[derive(Resource, Debug, Clone)]
+pub struct ColorConfig {
+    /// Color cells
+    pub cell_color: Color,
+    /// Color of grid background
+    pub background_color: Color,
+}
+
+impl Default for ColorConfig {
+    fn default() -> Self {
+        Self {
+            cell_color: Color::srgb(0.0, 0.0, 0.0),  // Black default
+            background_color: Color::srgb(0.9, 0.9, 0.9),  // Light Grey default
+        }
+    }
+}
+

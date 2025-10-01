@@ -24,8 +24,9 @@ pub fn draw_grid_system(
     if !display_config.grid_visible {
         return;
     }
-    
-    const LINE_COLOR: Color32 = Color32::BLACK;
+
+    // Use semi-transparent color for rows in the grid
+    const LINE_COLOR: Color32 = Color32::from_gray(128);
     let (camera, camera_projection, camera_transform) = match q_camera.single() {
         Ok(data) => data,
         Err(_) => return,
@@ -39,7 +40,7 @@ pub fn draw_grid_system(
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
-    
+
     let transparent_frame =
         egui::containers::Frame { fill: Color32::TRANSPARENT, ..Default::default() };
     let line_width = (1.0 - (camera_scale - DEFAULT_SCALE) / (MAX_SCALE - DEFAULT_SCALE)).powi(10);
@@ -65,7 +66,7 @@ pub fn draw_grid_system(
         let visible_bottom_right = ray_bottom_right.origin.truncate();
         let (x_max, y_min) =
             (visible_bottom_right.x.round() as isize, visible_bottom_right.y.round() as isize);
-        
+
         // Draw vertical lines
         for x in x_min..=x_max {
             let Ok(start) = camera.world_to_viewport(
@@ -81,13 +82,13 @@ pub fn draw_grid_system(
             ) else {
                 continue;
             };
-            let end_pos = egui::Pos2::new(end.x, end.y);   
+            let end_pos = egui::Pos2::new(end.x, end.y);
             painter.add(egui::Shape::LineSegment {
                 points: [start_pos, end_pos],
                 stroke: egui::Stroke { width: line_width, color: LINE_COLOR }.into(),
             });
         }
-        
+
         // Draw horizontal lines
         for y in y_min..=y_max {
             let Ok(start) = camera.world_to_viewport(

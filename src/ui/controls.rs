@@ -5,7 +5,7 @@
 use std::time::Duration;
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, egui};
-use crate::config::{SimulationConfig, DisplayConfig};
+use crate::config::{SimulationConfig, DisplayConfig, ColorConfig};
 use crate::simulation::{Alive, DeadCellPool};
 use crate::utils::{period_to_slider, slider_to_period, scale_to_slider, slider_to_scale};
 use crate::ui::pattern::{pattern_system, rle_loader_modal, PlacementMode, RleLoader};
@@ -25,6 +25,7 @@ pub fn control_panel_system(
     mut contexts: EguiContexts,
     mut simulation_config: ResMut<SimulationConfig>,
     mut display_config: ResMut<DisplayConfig>,
+    mut color_config: ResMut<ColorConfig>,
     mut q_camera: Query<(&mut Projection, &GlobalTransform)>,
     q_cells: Query<Entity, With<Alive>>,
     mut dead_pool: ResMut<DeadCellPool>,
@@ -35,13 +36,13 @@ pub fn control_panel_system(
         return;
     };
     ctx.set_visuals(egui::style::Visuals::light());
-    
+
     let Ok((mut camera_projection, camera_transform)) = q_camera.single_mut() else {
         eprintln!("Erreur camera: impossible d'obtenir une seule caméra");
         return;
     };
 
-    let (speed_slider_init, scale_slider_init, mut scale_slider_val) = 
+    let (speed_slider_init, scale_slider_init, mut scale_slider_val) =
         match camera_projection.as_mut() {
             Projection::Orthographic(orthographic) => {
                 let speed_slider = period_to_slider(simulation_config.period.as_secs_f32());
@@ -50,7 +51,7 @@ pub fn control_panel_system(
             },
             _ => return,
         };
-    
+
     let mut speed_slider = speed_slider_init;
     let separator = |ui: &mut egui::Ui| ui.add(egui::Separator::default());
 
@@ -61,17 +62,17 @@ pub fn control_panel_system(
                 clear_cells(&mut commands, &q_cells, &mut dead_pool);
             }
         });
-        
+
         ui.horizontal(|ui| {
             ui.add(egui::DragValue::new(&mut display_config.random_grid_width).suffix(" width"));
             if ui.button("Random Cells").clicked() {
                 let offset = -(display_config.random_grid_width as isize) / 2;
                 let width = display_config.random_grid_width as usize;
                 clear_cells(&mut commands, &q_cells, &mut dead_pool);
-                generate_random_cells(&mut commands, offset, offset, width, width);
+                generate_random_cells(&mut commands, &color_config, offset, offset, width, width);
             }
         });
-        
+
         separator(ui);
         ui.vertical(|ui| {
             ui.add(
@@ -84,7 +85,7 @@ pub fn control_panel_system(
                     .logarithmic(true),
             );
         });
-        
+
         separator(ui);
         ui.horizontal(|ui| {
             let play_text = if simulation_config.running { "Pause" } else { "Start" };
@@ -97,15 +98,46 @@ pub fn control_panel_system(
                 simulation_config.calculate_next_gen = true;
             };
         });
-        
+
         separator(ui);
         ui.vertical(|ui| {
             ui.checkbox(&mut display_config.grid_visible, "Show Grid");
         });
 
+        separator(ui);
+        ui.vertical(|ui| {
+            ui.label("Colors:");
+
+            // Color picker for cells
+            ui.horizontal(|ui| {
+                ui.label("Cells:");
+                let mut cell_color = [
+                    color_config.cell_color.to_srgba().red,
+                    color_config.cell_color.to_srgba().green,
+                    color_config.cell_color.to_srgba().blue,
+                ];
+                if ui.color_edit_button_rgb(&mut cell_color).changed() {
+                    color_config.cell_color = Color::srgb(cell_color[0], cell_color[1], cell_color[2]);
+                }
+            });
+
+            // Color picker for background
+            ui.horizontal(|ui| {
+                ui.label("Background:");
+                let mut background_color = [
+                    color_config.background_color.to_srgba().red,
+                    color_config.background_color.to_srgba().green,
+                    color_config.background_color.to_srgba().blue,
+                ];
+                if ui.color_edit_button_rgb(&mut background_color).changed() {
+                    color_config.background_color = Color::srgb(background_color[0], background_color[1], background_color[2]);
+                }
+            });
+        });
+
         // Add pattern section
         pattern_system(ui, &mut placement_mode, &mut simulation_config, &mut rle_loader);
-        
+
         separator(ui);
         ui.vertical(|ui| {
             let x = camera_transform.translation().x;
@@ -135,7 +167,7 @@ pub fn control_panel_system(
 
 /// Removes all living cells from the simulation
 fn clear_cells(
-    commands: &mut Commands, 
+    commands: &mut Commands,
     q_cells: &Query<Entity, With<Alive>>,
     dead_pool: &mut ResMut<DeadCellPool>
 ) {
@@ -148,11 +180,10 @@ fn clear_cells(
 }
 
 /// Generates random cells in a rectangular area
-fn generate_random_cells(commands: &mut Commands, x: isize, y: isize, width: usize, height: usize) {
+fn generate_random_cells(commands: &mut Commands, color_config: &ColorConfig, x: isize, y: isize, width: usize, height: usize) {
     use rand::Rng;
     use crate::simulation::CellPosition;
-    use crate::config::CELL_COLOR;
-    
+
     let mut rng = rand::rng();
     for coord_x in x..(x + width as isize) {
         for coord_y in y..(y + height as isize) {
@@ -161,7 +192,7 @@ fn generate_random_cells(commands: &mut Commands, x: isize, y: isize, width: usi
                     CellPosition { x: coord_x, y: coord_y },
                     Alive,
                     Sprite {
-                        color: CELL_COLOR,
+                        color: color_config.cell_color,
                         custom_size: Some(Vec2::new(1.0, 1.0)),
                         ..Default::default()
                     },
@@ -171,3 +202,4 @@ fn generate_random_cells(commands: &mut Commands, x: isize, y: isize, width: usi
         }
     }
 }
+
