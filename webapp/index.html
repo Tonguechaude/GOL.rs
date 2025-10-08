@@ -9,15 +9,36 @@
     </head>
     <body>
         <h1>Game of Life in RUST</h1>
+        <div id="loading">
+            <div class="loader-grid">
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+                <div class="cell"></div>
+            </div>
+        </div>
         <div id="error"></div>
         <script type="module">
             import init from "./jeu_de_la_vie.js";
 
-            init().catch(err => {
-                console.error("WASM error:", err);
-                document.getElementById('error').textContent =
-                    `Erreur de chargement: ${err.message}`;
-            });
+            init()
+                .then(() => {
+                    // timeout to see my fricking cool css animation
+                    setTimeout(() => {
+                        document.getElementById('loading').style.display = 'none';
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error("WASM error:", err);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error').textContent =
+                        `Erreur de chargement: ${err.message}`;
+                });
         </script>
     </body>
 </html>
