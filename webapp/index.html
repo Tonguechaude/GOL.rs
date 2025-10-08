@@ -8,11 +8,16 @@
         <link rel="stylesheet" href="styles.css" />
     </head>
     <body>
-        <h1>Jeu de la Vie en RUST</h1>
+        <h1>Game of Life in RUST</h1>
+        <div id="error"></div>
         <script type="module">
             import init from "./jeu_de_la_vie.js";
-            console.log("WebAssembly chargé avec succès");
-            init();
+
+            init().catch(err => {
+                console.error("WASM error:", err);
+                document.getElementById('error').textContent =
+                    `Erreur de chargement: ${err.message}`;
+            });
         </script>
     </body>
 </html>

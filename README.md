@@ -55,9 +55,9 @@ cargo install wasm-bindgen-cli wasm-server-runner
 ```
 
 ## Utilisation
-    
+
 ### Version Rust (fenêtre classique)
-    
+
 Pour compiler et exécuter le projet en mode release :
 
 ```bash
@@ -65,7 +65,7 @@ cargo run --release
 ```    
 
 ### Version WASM (en local)
-    
+
 Pour exécuter le projet dans un navigateur web en local :
 
 ```bash    
@@ -75,9 +75,9 @@ ou
 ```bash
 cargo serveur
 ```
-    
+
 ### Version WASM (pour déploiement)
-    
+
 Pour compiler le projet en WebAssembly et générer les fichiers JavaScript :
 
 ```bash
@@ -86,16 +86,24 @@ wasm-bindgen --no-typescript --out-dir ./webapp/ --target web ./target/wasm32-un
 wasm-opt -Oz -o ./webapp/jeu_de_la_vie_bg.wasm ./webapp/jeu_de_la_vie_bg.wasm # Optimize WASM file size
 ```
 
+Testing WASM in webserver environment :
+(You can't access from file:// cause Browsers dont allow import module to prevent malicious malware to access to your filesystem so you have to do this)
+
+```bash
+cd webapp
+python3 -m http.server 8080
+```
+
 ## Dépendances
-    
+
 Ce projet utilise les dépendances suivantes :
-    
+
 **Bevy** : Moteur de jeu pour l'interface graphique.  
 **egui** : Interface utilisateur pour la version Rust.  
 **rand** : Génération de nombres aléatoires pour l'initialisation de la grille.  
 **getrandom** : génération de nombre aléatoir compatible avbec la cible wasm32
 **wasm-bindgen** : Pour la compatibilité WebAssembly.  
-    
+
 ## Docker
 
 Actually I exposed a docker image here : [tonguechaude/rust-wasm-builder](https://hub.docker.com/r/tonguechaude/rust-wasm-builder)
@@ -103,17 +111,17 @@ Actually I exposed a docker image here : [tonguechaude/rust-wasm-builder](https:
 This image exist just because my runner CPU is so bad :(, so I need to optimize compute time in CI.
 
 ## Contribuer
-    
+
 Les contributions sont les bienvenues ! Si vous souhaitez améliorer ce projet, voici comment procéder :
-    
+
 1. Forkez ce dépôt.
 2. Créez une branche pour votre fonctionnalité (git checkout -b feature/nouvelle-fonctionnalite).
 3. Committez vos changements (git commit -am 'Ajouter une nouvelle fonctionnalité').
 4. Poussez vers la branche (git push origin feature/nouvelle-fonctionnalite).
 5. Ouvrez une Pull Request.
-    
+
 ## License
-    
+
 On fait que du Logiciel Libre ici !! Blague à part le code est sous licence **GNU GPL v3**
 
 Amusez-vous bien avec le Jeu de la Vie en Rust ! 🚀
