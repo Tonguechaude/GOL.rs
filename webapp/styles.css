@@ -1,3 +1,16 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f8f8f8;
+  color: #2c2c2c;
+}
+
+/* ========== LOADING ========== */
 #loading {
   position: fixed;
   top: 0;
@@ -25,7 +38,6 @@
   border: 1px solid #333;
 }
 
-/* blinker */
 .cell:nth-child(2),
 .cell:nth-child(8) {
   animation: blinker-vertical 1.6s infinite;
@@ -58,19 +70,73 @@
   }
 }
 
+/* ========== ERROR ========== */
 #error {
   position: fixed;
-  top: 60%;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  color: #ff4444;
+  transform: translate(-50%, -50%);
+  color: #d32f2f;
   font-size: 0.9rem;
   text-align: center;
   max-width: 80%;
+  z-index: 1001;
 }
 
-canvas {
+#error:empty {
+  display: none;
+}
+
+/* ========== 1. NAVBAR ========== */
+nav {
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+nav h1 {
+  font-size: 2rem;
+  color: #2c2c2c;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+/* ========== 2. TECHNOS ========== */
+#technos {
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 2rem;
+  text-align: center;
+}
+
+#technos p {
+  color: #666;
+  font-size: 1rem;
+  font-weight: 300;
+}
+
+/* ========== 3. CANVAS BEVY ========== */
+#game-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f8f8;
+}
+
+#game-container canvas {
   display: block;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  nav h1 {
+    font-size: 1.5rem;
+  }
+
+  #technos p {
+    font-size: 0.9rem;
+  }
 }

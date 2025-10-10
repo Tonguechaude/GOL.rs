@@ -6,14 +6,12 @@
         <meta name="author" content="Tonguechaude" />
         <meta name="description" content="Implementation of Conway's Game of Life in Rust and WebAssembly. Interactive simulation with Bevy graphical user interface." />
         <meta name="keywords" content="Conway, Game of Life, Rust, WebAssembly, WASM, Bevy, simulation" />
-        <!-- Favicon -->
         <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-
-        <title>Jeu de la Vie en RUST</title>
+        <title>Tonguechaude Game of life</title>
         <link rel="stylesheet" href="styles.css" />
     </head>
     <body>
-        <h1>Game of Life in RUST</h1>
+        <!-- Loading -->
         <div id="loading">
             <div class="loader-grid">
                 <div class="cell"></div>
@@ -27,13 +25,23 @@
                 <div class="cell"></div>
             </div>
         </div>
+
         <div id="error"></div>
+
+        <nav>
+            <h1>Jeu de la Vie</h1>
+        </nav>
+
+        <section id="technos">
+            <p>Développé avec 🦀 Rust, Bevy Engine et WebAssembly</p>
+        </section>
+
+        <div id="game-container"></div>
+
         <script type="module">
             import init from "./jeu_de_la_vie.js";
-
             init()
                 .then(() => {
-                    // timeout to see my fricking cool css animation
                     setTimeout(() => {
                         document.getElementById('loading').style.display = 'none';
                     }, 2000);
