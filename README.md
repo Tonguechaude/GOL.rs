@@ -1,84 +1,90 @@
-# Jeu De La Vie en **RUST**
+# Game Of Life
 
 ![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
-Le **Jeu de la Vie** est une simulation cellulaire automatisée conçue par le mathématicien John Conway. Ce projet est une implémentation en **Rust** du célèbre algorithme, avec une interface graphique utilisant **Bevy** et une version WebAssembly (WASM) pour une exécution dans le navigateur.
+First of all, sorry for my english. Please feel free to contribute for a better translation <3
+
+The **Game Of Life** is an automated cells simulation created by the mathematician John Conway. This project is an implementation build in **Rust**, he offer two differents GUI. Both of those GUI are propulsed by the **Bevy motor**. One GUI is in pure Rust and the other is also pure Rust but build in the **WASM** target. Thanks to those GUI you can try the project by typing in your terminal `cargo run` and by clicking on this link : [gol.tonguechaude.fr](https://gol.tonguechaude.fr)
 
 ---
 
-## À quoi ça sert ?
+## What's the point ?
 
-Bonne question ! En réalité je l'ai fait en Java déjà et j'aime pas le fait qur la JVM consomme 3 GB de RAM donc je la tente en Rust.
-
----
-
-## Fonctionnalités
-
-- **Simulation du Jeu de la Vie** : Implémentation de l'algorithme classique de Conway.
-- **Interface graphique** : Utilisation de **Bevy** pour une interface 2D interactive.
-- **Version WebAssembly** : Exécution dans un navigateur web avec une interface simple.
+Nice question ! I already did that in Java but I don't like the fact that JVM take 2 GB of RAM, so I try in Rust
 
 ---
 
-## Prérequis
+## Fonctionnality
 
-Pour utiliser ce projet, vous aurez besoin des outils suivants :
+- **GOL Simulation** : Implementation of the classic algorithm
+- **GUI** : Bevy provide a great 2D interactive interface
+- **WebAssembly version** : You can play in your browser
 
-- Un **cerveau** :brain:
-- Une **connexion internet**
-- Et une vrai liste de prérequis que voici : 
+---
+
+## Prerequisites
+
+To Run the project you need some tools :
+
+- Your :brain:
+- An internet connection
+
+And a real list of prerequisites :
+
 - **Rust Toolchain** :
-  - `rustc` (compilateur Rust)
-  - `cargo` (gestionnaire de paquets Rust)
-  - `rustup` (gestionnaire de versions Rust)
-- **Outils supplémentaires pour WASM** :
-  - `wasm32-unknown-unknown` (cible pour la compilation WebAssembly)
-  - `wasm-bindgen-cli` (pour générer les bindings JavaScript)
-  - `wasm-server-runner` (pour exécuter le projet en local)
+  - `rustc` : (rust compiler)
+  - `cargo` : (Our god :pray:)
+  - `rustup` : (version manager)
+- **Other tools for WASM** :
+  - `wasm32-unknown-unknown` (additional target for WASM compilation)
+  - `wasm-bindgen-cli` (to generate JS bindings)
+  - `wasm-server-runner` (to run the project in local environment)
 
 ---
 
 ## Installation
 
-1. Clonez ce dépôt :
+1. Clone the repository :
 
 ```bash
-git clone https://github.com/Tonguechaude/GOL.rs.git
-cd GOL.rs
+git clone https://gitlab.com/Tonguechaude/gol.git
+cd gol
 ```
-   
-2. Installez les dépendances Rust :
+
+2. Setup your environment :
 
 ```bash
 rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli wasm-server-runner
 ```
 
-## Utilisation
+## Usage
 
-### Version Rust (fenêtre classique)
+### Rust version (classic bevy window)
 
-Pour compiler et exécuter le projet en mode release :
+To compile and run in release mode :
 
 ```bash
 cargo run --release
-```    
+```
 
-### Version WASM (en local)
+### WASM version (local)
 
-Pour exécuter le projet dans un navigateur web en local :
+For running the project in your browser :
 
-```bash    
+```bash
 cargo run --target wasm32-unknown-unknown
 ```
-ou
+
+or
+
 ```bash
 cargo serveur
 ```
 
-### Version WASM (pour déploiement)
+### WASM version (The one i deploy on [gol.tonguechaude.fr](htts://gol.tonguechaude.fr))
 
-Pour compiler le projet en WebAssembly et générer les fichiers JavaScript :
+To compile the project in WASM and generate JS files
 
 ```bash
 cargo build --release --target wasm32-unknown-unknown
@@ -94,34 +100,15 @@ cd webapp
 python3 -m http.server 8080
 ```
 
-## Dépendances
-
-Ce projet utilise les dépendances suivantes :
-
-**Bevy** : Moteur de jeu pour l'interface graphique.  
-**egui** : Interface utilisateur pour la version Rust.  
-**rand** : Génération de nombres aléatoires pour l'initialisation de la grille.  
-**getrandom** : génération de nombre aléatoir compatible avbec la cible wasm32
-**wasm-bindgen** : Pour la compatibilité WebAssembly.  
-
 ## Docker
 
 Actually I exposed a docker image here : [tonguechaude/rust-wasm-builder](https://hub.docker.com/r/tonguechaude/rust-wasm-builder)
 
 This image exist just because my runner CPU is so bad :(, so I need to optimize compute time in CI.
 
-## Contribuer
-
-Les contributions sont les bienvenues ! Si vous souhaitez améliorer ce projet, voici comment procéder :
-
-1. Forkez ce dépôt.
-2. Créez une branche pour votre fonctionnalité (git checkout -b feature/nouvelle-fonctionnalite).
-3. Committez vos changements (git commit -am 'Ajouter une nouvelle fonctionnalité').
-4. Poussez vers la branche (git push origin feature/nouvelle-fonctionnalite).
-5. Ouvrez une Pull Request.
-
 ## License
 
-On fait que du Logiciel Libre ici !! Blague à part le code est sous licence **GNU GPL v3**
+We are doing free software here !! The code is under **GNU GPL v3**
 
-Amusez-vous bien avec le Jeu de la Vie en Rust ! 🚀
+Have fun with this project !
+
