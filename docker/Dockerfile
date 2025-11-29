@@ -6,7 +6,7 @@ RUN rustup toolchain install nightly --allow-downgrade && \
   rustup target add wasm32-unknown-unknown
 
 # Install WASM tools
-RUN cargo install wasm-bindgen-cli && \
+RUN cargo install wasm-bindgen-cli --version 0.2.104 && \
   cargo install wasm-server-runner
 
 # Keep container running for CI jobs
