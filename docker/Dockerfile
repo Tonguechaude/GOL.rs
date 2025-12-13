@@ -1,4 +1,4 @@
-FROM rust:latest
+FROM rust:1.90
 
 # Install nightly toolchain and WASM target
 RUN rustup toolchain install nightly --allow-downgrade && \
