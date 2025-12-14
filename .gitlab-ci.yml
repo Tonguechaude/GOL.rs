@@ -10,7 +10,7 @@ variables:
 # Build the gol application
 rust_build:
   stage: build
-  image: tonguechaude/rust-wasm-builder:vps
+  image: tonguechaude/rust-wasm-builder:latest
   script:
     - cargo build-wasm
     - wasm-bindgen --no-typescript --out-dir ./webapp/ --target web ./target/${WASM_TARGET}/release/gol.wasm
