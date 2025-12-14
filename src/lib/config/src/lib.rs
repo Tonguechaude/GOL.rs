@@ -12,7 +12,7 @@ pub use constants::*;
 pub use display::*;
 pub use simulation::*;
 
-use bevy::prelude::*;
+use bevy::prelude::{App, Plugin};
 
 /// Plugin for configuration resources
 pub struct ConfigPlugin;

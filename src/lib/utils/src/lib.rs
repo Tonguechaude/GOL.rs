@@ -8,7 +8,7 @@ pub mod diagnostics;
 pub use conversion::*;
 pub use diagnostics::*;
 
-use bevy::prelude::*;
+use bevy::prelude::{App, Plugin};
 
 /// Plugin for utility systems
 pub struct UtilsPlugin;

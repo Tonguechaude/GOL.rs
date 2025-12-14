@@ -2,7 +2,7 @@
 //!
 //! Modal dialogs for confirmation and input.
 
-use bevy::prelude::*;
+use bevy::prelude::{Resource, Plugin, App, ResMut};
 use bevy_egui::{EguiContexts, egui};
 
 /// State for managing modal windows

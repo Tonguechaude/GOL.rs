@@ -2,7 +2,7 @@
 //!
 //! Global constants used throughout the application.
 
-use bevy::prelude::*;
+use bevy::prelude::Color;
 
 /// Type alias for time values in seconds
 pub type Seconds = f32;

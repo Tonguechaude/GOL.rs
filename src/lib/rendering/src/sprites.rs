@@ -2,7 +2,10 @@
 //!
 //! Handles the visual representation of cells as sprites.
 
-use bevy::prelude::*;
+use bevy::prelude::{
+    App, Commands, Entity, IntoScheduleConfigs, Plugin, Query, Res, Sprite, Transform, Update,
+    Vec2, With, Without,
+};
 use gol_config::ColorConfig;
 use gol_simulation::{Alive, CellPosition, CellSet};
 

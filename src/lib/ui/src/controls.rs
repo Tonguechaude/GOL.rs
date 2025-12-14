@@ -3,7 +3,7 @@
 //! Main control panel for the Game of Life simulation.
 
 use crate::pattern::{PlacementMode, RleLoader, pattern_system, rle_loader_modal};
-use bevy::prelude::*;
+use bevy::prelude::{Plugin, Commands, ResMut, Projection, GlobalTransform, With, Entity, App, Query, Color, Visibility, Sprite, Vec2, Transform};
 use bevy_egui::{EguiContexts, egui};
 use gol_config::{ColorConfig, DisplayConfig, SimulationConfig};
 use gol_simulation::{Alive, DeadCellPool};

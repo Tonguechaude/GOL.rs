@@ -2,8 +2,8 @@
 //!
 //! FPS display and performance monitoring utilities.
 
-use bevy::diagnostic::*;
-use bevy::prelude::*;
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, DiagnosticsStore};
+use bevy::prelude::{Plugin, App, Update, Res, ButtonInput, KeyCode, ResMut, Query, With};
 use bevy_egui::{EguiContexts, egui};
 use gol_config::FpsConfig;
 use gol_simulation::cell::{Alive, CellPosition};

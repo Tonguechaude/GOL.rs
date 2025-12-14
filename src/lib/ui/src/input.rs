@@ -3,7 +3,7 @@
 //! Handles keyboard and mouse input for camera movement and cell interaction.
 
 use crate::pattern::{PlacementMode, RleLoader};
-use bevy::prelude::*;
+use bevy::prelude::{Plugin, App, Resource, Update, Vec2, Transform, Visibility, Sprite, ResMut, Commands, Query, Entity, KeyCode, GlobalTransform, Projection, With, Time, Res, Camera, ButtonInput, Window, MouseButton, Without, Vec3};
 use bevy::window::PrimaryWindow;
 use gol_config::{
     BASE_SPEED, CameraConfig, ColorConfig, DEFAULT_SCALE, MAX_SPEED, SimulationConfig, ZOOM_STEP,

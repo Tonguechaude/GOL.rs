@@ -2,7 +2,10 @@
 //!
 //! Handles the main simulation loop, timing, and generation calculations.
 
-use bevy::prelude::*;
+use bevy::prelude::{
+    App, Commands, DetectChanges, Entity, IntoScheduleConfigs, Plugin, Query, Res, ResMut,
+    Resource, Time, Timer, TimerMode, Transform, Update, Visibility, With,
+};
 use rustc_hash::FxHashSet;
 
 use crate::cell::{Alive, CellPosition, CellSet, DeadCellPool};

@@ -2,7 +2,9 @@
 //!
 //! Defines the basic cell types, components, and states for the Game of Life.
 
-use bevy::prelude::*;
+use bevy::prelude::{
+    App, Commands, Component, Entity, IntoScheduleConfigs, Plugin, Resource, Startup, SystemSet,
+};
 
 /// System set for organizing cell-related systems in the Bevy ECS.
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]

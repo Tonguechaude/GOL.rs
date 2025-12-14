@@ -5,13 +5,3 @@ edition = "2024"
 
 [lib]
 proc-macro = true
-
-colored = { workspace = true }
-quote = { workspace = true }
-syn = { workspace = true, features = ["full"] }
-proc-macro2 = { workspace = true }
-serde_json = { workspace = true }
-serde = { workspace = true }
-regex = { workspace = true }
-indexmap = { workspace = true, features = ["serde"] }
-bitcode = { workspace = true }

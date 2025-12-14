@@ -14,7 +14,7 @@ pub use input::*;
 pub use modals::*;
 pub use pattern::*;
 
-use bevy::prelude::*;
+use bevy::prelude::{Plugin, App};
 use bevy_egui::EguiPlugin;
 
 /// Bevy plugin that sets up the GUI systems and resources.

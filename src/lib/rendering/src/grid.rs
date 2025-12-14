@@ -2,7 +2,7 @@
 //!
 //! Handles the visual rendering of the grid overlay.
 
-use bevy::prelude::*;
+use bevy::prelude::{App, Camera, GlobalTransform, Plugin, Projection, Query, Res, Vec2, Vec3};
 use bevy_egui::{
     EguiContexts,
     egui::{self, Color32},

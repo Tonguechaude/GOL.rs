@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::prelude::{Resource, ResMut};
 use bevy_egui::egui;
 use gol_config::SimulationConfig;
 

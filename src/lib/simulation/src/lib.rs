@@ -12,7 +12,7 @@ pub use cell::*;
 pub use generation::*;
 pub use rules::*;
 
-use bevy::prelude::*;
+use bevy::prelude::{Plugin, App};
 
 /// Bevy plugin that sets up the Game of Life simulation systems.
 ///

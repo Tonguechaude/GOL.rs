@@ -9,7 +9,7 @@ pub mod sprites;
 pub use grid::*;
 pub use sprites::*;
 
-use bevy::prelude::*;
+use bevy::prelude::{App, ClearColor, Plugin};
 use gol_config::BG_COLOR;
 
 /// Plugin for rendering systems

@@ -2,7 +2,7 @@
 //!
 //! Configuration parameters for visual display and camera behavior.
 
-use bevy::prelude::*;
+use bevy::prelude::{Color, Resource};
 
 /// GUI-specific configuration parameters.
 ///

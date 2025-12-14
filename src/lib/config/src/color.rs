@@ -3,7 +3,7 @@
 //! Plugin to manage colors in the game
 
 use super::ColorConfig;
-use bevy::prelude::*;
+use bevy::prelude::{Res, Plugin, App, Startup, Update, ResMut, ClearColor, DetectChanges};
 
 /// Plugin for managing colors
 pub struct ColorPlugin;

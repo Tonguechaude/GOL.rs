@@ -2,7 +2,7 @@
 //!
 //! Configuration parameters for the Game of Life simulation behavior.
 
-use bevy::prelude::*;
+use bevy::prelude::Resource;
 use std::time::Duration;
 
 /// Configuration parameters for the Game of Life simulation.
