@@ -1,0 +1,17 @@
+[package]
+name = "gol"
+description = "A high-performance Game Of Life implementation"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { workspace = true }
+gol-config = { workspace = true }
+gol-rendering = { workspace = true }
+gol-simulation = { workspace = true }
+gol-ui = { workspace = true }
+gol-utils = { workspace = true }
+
+[[bin]]
+name = "gol"
+path = "src/main.rs"

@@ -1,0 +1,8 @@
+[package]
+name = "gol-config"
+version = "0.1.0"
+edition = "2024"
+description = "Gol configuration utilities"
+
+[dependencies]
+bevy = { workspace = true }

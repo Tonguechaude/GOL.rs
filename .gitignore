@@ -1,8 +1,16 @@
-# VScode
-.vscode
-
 # vim
 *.un~
+
+# Rust
+Cargo.lock
+**/target
+
+# Acceptable IDE
+.zed
+
+# Other shitty IDE
+.idea
+.vscode
 
 # build
 webapp/*.js

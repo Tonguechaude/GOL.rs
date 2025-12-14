@@ -1,26 +1,95 @@
-[workspace]
-members = ["parse_rle_macro"]
-resolver = "2"
+# FerrumC Project workspace
+#
+# Layout of this file:
+# - Package description
+# - Members of the workspace.
+# - Profile compilation settings.
+# - Workspace lints
+# - Workspace dependencies.
 
-[package]
-name = "jeu_de_la_vie"
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
 authors = [
     "Evan Challias <evan.challias@tonguechaude.fr>"
 ]
-description = "Implémentation du Jeu de la vie en Rust et WASM avec Bevy"
+description = "Game of Life impl in Rust with Bevy"
 keywords = ["GOL", "Bevy", "WASM"]
 license = "GNU - AGPL v3.0"
 
-[dependencies]
+[workspace]
+resolver = "2"
+
+#================= Members =================#
+members = [
+  "src/bin",
+  "src/lib/config",
+  "src/lib/derive_macros",
+  "src/lib/rendering",
+  "src/lib/simulation",
+  "src/lib/ui",
+  "src/lib/utils",
+]
+
+#================== Lints ==================#
+[workspace.lints.rust]
+unsafe_code = "allow"
+unused_unsafe = "deny"
+unused_import_braces = "deny"
+unused_lifetimes = "deny"
+keyword_idents_2018 = "deny"
+keyword_idents_2024 = "deny"
+missing_abi = "deny"
+future_incompatible = { level = "deny", priority = -1 }
+
+[workspace.lints.clippy]
+borrow_as_ptr = "deny"
+case_sensitive_file_extension_comparisons = "deny"
+cast_lossless = "deny"
+cast_ptr_alignment = "deny"
+match_bool = "deny"
+mut_mut = "deny"
+wildcard_dependencies = "deny"
+redundant_type_annotations = "deny"
+infinite_loop = "deny"
+
+#================= Profile =================#
+[profile.profiling]
+inherits = "release"
+debug = true
+
+[profile.release]
+
+[profile.hyper]
+inherits = "release"
+strip = true
+lto = true
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+panic = "abort"
+codegen-units = 1
+
+[profile.bench]
+debug = true
+
+#=============== Dependencies ==============#
+[workspace.dependencies]
+# Workspace members
+gol-config = { path = "src/lib/config" }
+gol-macros = { path = "src/lib/derive_macros" }
+gol-rendering = { path = "src/lib/rendering" }
+gol-simulation = { path = "src/lib/simulation" }
+gol-ui = { path = "src/lib/ui" }
+gol-utils = { path = "src/lib/utils" }
+
 rand = "0.9.2"
 bevy_egui = "0.36.0"
 getrandom = { version = "0.3.3", features = ["wasm_js"] } # to enable rand support for wasm32 target
 rustc-hash = "2.1"
-parse_rle_macro = { path = "parse_rle_macro" }
 
-[dependencies.bevy]
+[workspace.dependencies.bevy]
 version = "0.16.1"
 default-features = false
 features = [
@@ -35,11 +104,3 @@ features = [
     "webgl2", # Web: use WebGL2 instead of WebGPU
     #"trace",
 ]
-
-[profile.release]
-opt-level = 3     # Maximum optimization
-lto = true        # Link Time Optimization
-codegen-units = 1 # Optimize for binary size
-strip = true      # Remove debug symbols
-panic = 'abort'   # Reduce unwinding overhead
-

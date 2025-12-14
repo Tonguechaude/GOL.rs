@@ -1,0 +1,11 @@
+[package]
+name = "gol-simulation"
+version = "0.1.0"
+edition = "2024"
+description = "Gol simulation utilities"
+
+[dependencies]
+bevy = { workspace = true }
+rustc-hash = { workspace = true }
+gol-config = { workspace = true }
+gol-macros = { workspace = true }

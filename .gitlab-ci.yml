@@ -13,7 +13,7 @@ rust_build:
   image: tonguechaude/rust-wasm-builder:vps
   script:
     - cargo build-wasm
-    - wasm-bindgen --no-typescript --out-dir ./webapp/ --target web ./target/${WASM_TARGET}/release/jeu_de_la_vie.wasm
+    - wasm-bindgen --no-typescript --out-dir ./webapp/ --target web ./target/${WASM_TARGET}/release/gol.wasm
     - cd webapp
     - tar czf ../gol.tar.gz .
   artifacts:
