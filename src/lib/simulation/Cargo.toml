@@ -9,3 +9,10 @@ bevy = { workspace = true }
 rustc-hash = { workspace = true }
 gol-config = { workspace = true }
 gol-macros = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "simulation_bench"
+harness = false

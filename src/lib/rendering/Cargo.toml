@@ -9,3 +9,10 @@ bevy = { workspace = true }
 bevy_egui = { workspace = true }
 gol-config = { workspace = true }
 gol-simulation = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "rendering_bench"
+harness = false
