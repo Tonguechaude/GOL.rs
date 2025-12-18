@@ -1,10 +1,34 @@
+use colored::{control, Colorize};
 use proc_macro::TokenStream;
 use std::fs;
 use std::path::Path;
 
+/// Information about a parsed RLE file
+struct RleFileInfo {
+    name: String,
+    path: String,
+    size_bytes: u64,
+}
+
+impl RleFileInfo {
+    fn display(&self) {
+        let size_kb = self.size_bytes as f64 / 1024.0;
+        eprintln!(
+            "  {} {} {} {} {}",
+            "[GOL_MACROS]".blue().bold(),
+            "Pattern:".white().dimmed(),
+            self.name.green().bold(),
+            format!("({:.2} KB)", size_kb).yellow(),
+            format!("@ {}", self.path).cyan().dimmed()
+        );
+    }
+}
+
 /// Generate all function for .rle files in a directory
 #[proc_macro]
 pub fn generate_pattern_functions(input: TokenStream) -> TokenStream {
+    // Force colors to be enabled during compilation
+    control::set_override(true);
     let assets_path = input.to_string().trim_matches('"').to_string();
 
     let rle_files = match find_rle_files(&assets_path) {
@@ -53,6 +77,18 @@ fn find_rle_files(dir: &str) -> Result<Vec<(String, String)>, std::io::Error> {
             // Convert file name in valid function name
             let fn_name = file_name.replace(['-', ' '], "_").to_lowercase();
             let relative_path = format!("../../../../{}", file_path.to_string_lossy());
+
+            // Get file metadata
+            let metadata = fs::metadata(&file_path).ok();
+            let size_bytes = metadata.map(|m| m.len()).unwrap_or(0);
+
+            // Display file info
+            let file_info = RleFileInfo {
+                name: file_name.to_string(),
+                path: file_path.display().to_string(),
+                size_bytes,
+            };
+            file_info.display();
 
             results.push((fn_name, relative_path));
         }
