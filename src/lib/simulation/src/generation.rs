@@ -64,7 +64,7 @@ pub fn calculate_next_generation(
 ) {
     if config.running {
         timer.0.tick(time.delta());
-        if !timer.0.finished() {
+        if !timer.0.just_finished() {
             return;
         }
     } else if !config.calculate_next_gen {

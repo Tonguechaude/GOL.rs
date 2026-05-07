@@ -2,8 +2,8 @@
 //!
 //! Camera initialization and movement controls for the 2D Game of Life view.
 
-use bevy::prelude::{Commands, App, Startup, OrthographicProjection, Projection, Camera2d, Plugin};
-use bevy::render::camera::ScalingMode;
+use bevy::camera::ScalingMode;
+use bevy::prelude::{App, Camera2d, Commands, OrthographicProjection, Plugin, Projection, Startup};
 use gol_config::DEFAULT_SCALE;
 
 /// Plugin for camera-related systems

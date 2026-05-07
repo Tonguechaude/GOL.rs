@@ -1,4 +1,4 @@
-use bevy::prelude::{Resource, ResMut};
+use bevy::prelude::{ResMut, Resource};
 use bevy_egui::egui;
 use gol_config::SimulationConfig;
 
@@ -76,7 +76,7 @@ pub fn rle_loader_modal(
     egui::Area::new(egui::Id::new("rle_overlay"))
         .fixed_pos(egui::Pos2::ZERO)
         .show(ctx, |ui| {
-            let screen_rect = ctx.input(|i| i.screen_rect);
+            let screen_rect = ctx.input(|i| i.content_rect());
             ui.allocate_response(screen_rect.size(), egui::Sense::click());
             ui.painter().rect_filled(
                 screen_rect,
@@ -90,7 +90,7 @@ pub fn rle_loader_modal(
         .resizable(true)
         .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
         .default_size([500.0, 400.0])
-        .max_height(ctx.screen_rect().height() * 0.8)
+        .max_height(ctx.content_rect().height() * 0.8)
         .show(ctx, |ui| {
             ui.vertical(|ui| {
                 ui.label("Paste your RLE pattern content:");

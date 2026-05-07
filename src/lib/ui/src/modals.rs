@@ -1,8 +1,7 @@
 //! # Modals Module
 //!
 //! Modal dialogs for confirmation and input.
-
-use bevy::prelude::{Resource, Plugin, App, ResMut};
+use bevy::prelude::{App, Plugin, ResMut, Resource};
 use bevy_egui::{EguiContexts, egui};
 
 /// State for managing modal windows
@@ -105,7 +104,7 @@ fn render_overlay(ctx: &egui::Context) {
     egui::Area::new(egui::Id::new("modal_overlay"))
         .fixed_pos(egui::Pos2::ZERO)
         .show(ctx, |ui| {
-            let screen_rect = ctx.input(|i| i.screen_rect);
+            let screen_rect = ctx.input(|i| i.content_rect());
             ui.allocate_response(screen_rect.size(), egui::Sense::click());
             ui.painter().rect_filled(
                 screen_rect,
